@@ -10,7 +10,8 @@ namespace Solid.State
 
             private readonly StateConfiguration _owningStateConfiguration;
             private readonly TTrigger _trigger;
-            private Type _targetState;
+            
+            private StateConfiguration _targetState;
             private Func<bool> _guardClause; 
 
             // Constructor
@@ -32,7 +33,7 @@ namespace Solid.State
 
             public StateConfiguration GoesTo<TTargetState>() where TTargetState : SolidState
             {
-                _targetState = typeof (TTargetState);
+                _targetState = _owningStateConfiguration.OwningMachine.State<TTargetState>();
 
                 // Return the correct StateConfiguration
                 var machine = _owningStateConfiguration.OwningMachine;
@@ -46,7 +47,7 @@ namespace Solid.State
                 get { return _trigger; }
             }
 
-            internal Type TargetState
+            internal StateConfiguration TargetState
             {
                 get { return _targetState; }
             }
