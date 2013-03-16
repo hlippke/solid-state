@@ -13,7 +13,7 @@ namespace Solid.State
             private readonly SolidMachine<TTrigger> _owningMachine;
             private readonly Type _stateType;
             private readonly List<TriggerConfiguration> _triggerConfigurations;
-
+            
             // Private methods
 
             private TriggerConfiguration GetConfigurationByTrigger(TTrigger trigger)
@@ -32,6 +32,17 @@ namespace Solid.State
 
             // Methods
 
+            public StateConfiguration IsInitialState()
+            {
+                if (_owningMachine.InitialStateConfigured)
+                    throw new SolidStateException(
+                        "The state machine cannot have multiple states configured as the initial state!");
+
+                _owningMachine.SetInitialState(this);
+
+                return this;
+            }
+
             /// <summary>
             /// Adds a guardless permitted transition to the state configuration.
             /// </summary>
@@ -46,11 +57,11 @@ namespace Solid.State
                     if (existingConfig.GuardClause != null)
                         throw new SolidStateException(
                             string.Format(
-                                "State {0} has at least one guarded transition configured on trigger {1} already. A state cannot have both guardless and guarded transitions at the same time.",
+                                "State {0} has at least one guarded transition configured on trigger {1} already. A state cannot have both guardless and guarded transitions at the same time!",
                                 _stateType.Name, trigger));
                     else
                         throw new SolidStateException(string.Format(
-                            "Trigger {0} has already been configured for state {1}", trigger, _stateType.Name));
+                            "Trigger {0} has already been configured for state {1}!", trigger, _stateType.Name));
                 }
 
                 var newConfiguration = new TriggerConfiguration(trigger, null, this);
@@ -61,12 +72,23 @@ namespace Solid.State
 
             public TriggerConfiguration On(TTrigger trigger, Func<bool> guardClause)
             {
-                throw new NotImplementedException();
-            }
+                if (guardClause == null) throw new ArgumentNullException("guardClause");
 
-            public StateConfiguration IsSubStateOf<TState>() where TState : SolidState
-            {
-                throw new NotImplementedException();
+                var existingConfig = GetConfigurationByTrigger(trigger);
+                if (existingConfig != null)
+                {
+                    // It's OK that there are multiple configurations of the same trigger, as long as they all have guard clauses
+                    if (existingConfig.GuardClause == null)
+                        throw new SolidStateException(
+                            string.Format(
+                                "State {0} has an unguarded transition for trigger {1}, you cannot add guarded transitions to this state as well!",
+                                _stateType.Name, trigger));
+                }
+
+                var newConfiguration = new TriggerConfiguration(trigger, guardClause, this);
+                _triggerConfigurations.Add(newConfiguration);
+
+                return newConfiguration;
             }
 
             // Properties
