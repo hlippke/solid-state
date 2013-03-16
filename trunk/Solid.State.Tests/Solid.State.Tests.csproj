@@ -59,6 +59,8 @@
     <Compile Include="TelephoneStates\DiallingState.cs" />
     <Compile Include="TelephoneStates\IdleState.cs" />
     <Compile Include="TelephoneStates\RingingState.cs" />
+    <Compile Include="TelephoneStates\WaitForAnswerState.cs" />
+    <Compile Include="TestStates\StateWithoutParameterlessConstructor.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Solid.State\Solid.State.csproj">

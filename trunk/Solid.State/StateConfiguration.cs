@@ -14,6 +14,8 @@ namespace Solid.State
             private readonly Type _stateType;
             private readonly List<TriggerConfiguration> _triggerConfigurations;
             
+            private SolidState _stateInstance;
+
             // Private methods
 
             private TriggerConfiguration GetConfigurationByTrigger(TTrigger trigger)
@@ -31,6 +33,26 @@ namespace Solid.State
             }
 
             // Methods
+
+            /// <summary>
+            /// Enters a state, creating an instance of it if necessary.
+            /// </summary>
+            public void Enter()
+            {
+                if (_stateInstance == null)
+                    _stateInstance = _owningMachine.InstantiateState(_stateType);
+
+                _stateInstance.Entering();
+            }
+
+            /// <summary>
+            /// Exits the state that this configuration is linked to.
+            /// </summary>
+            internal void Exit()
+            {
+                if (_stateInstance != null)
+                    _stateInstance.Exiting();
+            }
 
             public StateConfiguration IsInitialState()
             {
@@ -103,9 +125,14 @@ namespace Solid.State
                 get { return _triggerConfigurations; }
             }
 
-            public Type StateType
+            internal Type StateType
             {
                 get { return _stateType; }
+            }
+
+            internal SolidState StateInstance
+            {
+                get { return _stateInstance; }
             }
         }
     }

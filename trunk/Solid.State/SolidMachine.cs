@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Solid.State
 {
@@ -8,9 +9,59 @@ namespace Solid.State
         // Variables
 
         private StateConfiguration _initialState;
+        private StateConfiguration _currentState;
+        
         private bool _initialStateConfigured;
+        private bool _isStarted;
+        private IStateResolver _stateResolver;
 
         internal Dictionary<Type, StateConfiguration> _stateConfigurations;
+        private bool _stateResolverRequired;
+
+        // Private methods
+
+        /// <summary>
+        /// Checks if a state resolver will be required on state machine startup.
+        /// </summary>
+        /// <param name="stateType"></param>
+        internal void HandleResolverRequired(Type stateType)
+        {
+            // A state resolver is required if a configured state has no parameterless constructor
+            _stateResolverRequired = (stateType.GetConstructor(Type.EmptyTypes) == null);
+        }
+
+        private void HandleMachineStarted()
+        {
+            if (!_isStarted)
+                throw new SolidStateException("State machine is not started!");
+        }
+
+        private void GotoState(StateConfiguration state)
+        {
+            // Are we leaving a state?
+            if (_currentState != null)
+                _currentState.Exit();
+
+            _currentState = state;
+
+            // Are we entering a new state?
+            if (_currentState != null)
+                _currentState.Enter();
+        }
+
+        /// <summary>
+        /// Creates an instance of a specified state type.
+        /// </summary>
+        /// <param name="stateType"></param>
+        /// <returns></returns>
+        private SolidState InstantiateState(Type stateType)
+        {
+            // Do we have a state resolver?
+            if (_stateResolver != null)
+                return _stateResolver.ResolveState(stateType);
+            // No, use standard .NET activator
+            return (SolidState) Activator.CreateInstance(stateType);
+        }
 
         // Constructor
 
@@ -19,11 +70,18 @@ namespace Solid.State
             _stateConfigurations = new Dictionary<Type, StateConfiguration>();
         }
 
+        public SolidMachine(IStateResolver stateResolver) : this()
+        {
+            _stateResolver = stateResolver;
+        }
+
         // Public methods
 
         public StateConfiguration State<TState>() where TState : SolidState
         {
             var type = typeof (TState);
+            // Does the state have a parameterless constructor? Otherwise a state resolver is required
+            HandleResolverRequired(type);
 
             // Does a configuration for this state exist already?
             StateConfiguration configuration;
@@ -48,7 +106,36 @@ namespace Solid.State
         /// </summary>
         public void Start()
         {
-            throw new NotImplementedException();
+            if (_initialState == null)
+                throw new SolidStateException("No states have been configured!");
+
+            // Is a state resolver required without us having one?
+            if (_stateResolverRequired && (_stateResolver == null))
+                throw new SolidStateException(
+                    "One or more configured states has no parameterless constructor. Add such constructors or make sure that the StateResolver property is set!");
+
+            _isStarted = true;
+
+            // Transition to initial state
+            GotoState(_initialState);
+        }
+
+        /// <summary>
+        /// Notifies the state machine that a transition should be triggered.
+        /// </summary>
+        /// <param name="trigger"></param>
+        public void Trigger(TTrigger trigger)
+        {
+            HandleMachineStarted();
+
+            var triggers = _currentState.TriggerConfigurations.Where(x => x.Trigger.Equals(trigger)).ToList();
+            if (triggers.Count == 0)
+                throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!", trigger,
+                                                            _currentState.StateType.Name));
+
+            // Is it a single, unguarded trigger?
+            if (triggers[0].GuardClause == null)
+                GotoState(triggers[0].TargetState);
         }
 
         // Properties
@@ -79,6 +166,30 @@ namespace Solid.State
         public Dictionary<Type, StateConfiguration> StateConfigurations
         {
             get { return _stateConfigurations; }
+        }
+
+        /// <summary>
+        /// Returns the state that the state machine is currently in.
+        /// </summary>
+        public SolidState CurrentState
+        {
+            get
+            {
+                if (_currentState == null)
+                    return null;
+                else
+                    return _currentState.StateInstance;
+            }
+        }
+
+        /// <summary>
+        /// The resolver for state machine states. If this is not specified the standard
+        /// .NET activator is used and all states must have parameterless constructors.
+        /// </summary>
+        public IStateResolver StateResolver
+        {
+            get { return _stateResolver; }
+            set { _stateResolver = value; }
         }
     }
 }
