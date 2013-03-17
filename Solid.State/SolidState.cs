@@ -1,17 +1,13 @@
 ﻿namespace Solid.State
 {
-    public abstract class SolidState
+    public abstract class SolidState : ISolidState
     {
-        // Methods
-
-        protected internal virtual void Entering()
+        public virtual void EnteringState()
         {
-            // No behavior in this state
         }
 
-        protected internal virtual void Exiting()
+        public virtual void ExitingState()
         {
-            // No behavior in this state
         }
     }
 }

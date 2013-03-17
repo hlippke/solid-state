@@ -14,7 +14,7 @@ namespace Solid.State
             private readonly Type _stateType;
             private readonly List<TriggerConfiguration> _triggerConfigurations;
             
-            private SolidState _stateInstance;
+            private ISolidState _stateInstance;
 
             // Private methods
 
@@ -42,7 +42,7 @@ namespace Solid.State
                 if (_stateInstance == null)
                     _stateInstance = _owningMachine.InstantiateState(_stateType);
 
-                _stateInstance.Entering();
+                _stateInstance.EnteringState();
             }
 
             /// <summary>
@@ -51,7 +51,7 @@ namespace Solid.State
             internal void Exit()
             {
                 if (_stateInstance != null)
-                    _stateInstance.Exiting();
+                    _stateInstance.ExitingState();
             }
 
             public StateConfiguration IsInitialState()
@@ -130,7 +130,7 @@ namespace Solid.State
                 get { return _stateType; }
             }
 
-            internal SolidState StateInstance
+            internal ISolidState StateInstance
             {
                 get { return _stateInstance; }
             }
