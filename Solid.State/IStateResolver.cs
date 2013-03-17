@@ -9,6 +9,6 @@ namespace Solid.State
     {
         // Methods
 
-        SolidState ResolveState(Type stateType);
+        ISolidState ResolveState(Type stateType);
     }
 }

@@ -41,13 +41,19 @@ namespace Solid.State
                 _currentState.Enter();
         }
 
+        private void SetInitialState(StateConfiguration initialStateConfiguration)
+        {
+            _initialState = initialStateConfiguration;
+            _initialStateConfigured = true;
+        }
+
         /// <summary>
         /// Creates an instance of a specified state type, either through .NET activation
         /// or through a defined state resolver.
         /// </summary>
         /// <param name="stateType"></param>
         /// <returns></returns>
-        private SolidState InstantiateState(Type stateType)
+        private ISolidState InstantiateState(Type stateType)
         {
             // Do we have a state resolver?
             if (_stateResolver != null)
@@ -192,12 +198,6 @@ namespace Solid.State
             get { return _initialStateConfigured; }
         }
 
-        internal void SetInitialState(StateConfiguration initialStateConfiguration)
-        {
-            _initialState = initialStateConfiguration;
-            _initialStateConfigured = true;
-        }
-
         /// <summary>
         /// The type that is the initial state.
         /// </summary>
@@ -237,7 +237,7 @@ namespace Solid.State
 
         /// <summary>
         /// The resolver for state machine states. If this is not specified the standard
-        /// .NET activator is used and all states must have parameterless constructors.
+        /// .NET activator is used and all states must then have parameterless constructors.
         /// </summary>
         public IStateResolver StateResolver
         {

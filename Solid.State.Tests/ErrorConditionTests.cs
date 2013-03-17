@@ -35,6 +35,10 @@ namespace Solid.State.Tests
             }
         }
 
+        /// <summary>
+        /// Verifies that a state cannot have multiple transitions on the same trigger if
+        /// not all of them have guard clauses.
+        /// </summary>
         [TestMethod]
         public void ConfigureUnguardedAndGuardedTrigger()
         {
@@ -55,6 +59,9 @@ namespace Solid.State.Tests
             }
         }
 
+        /// <summary>
+        /// Tests that only one initial state is allowed.
+        /// </summary>
         [TestMethod]
         public void ConfigureMultipleInitialStates()
         {
@@ -81,6 +88,10 @@ namespace Solid.State.Tests
             }
         }
 
+        /// <summary>
+        /// Verifies that it's not possible to have states that doesn't have a parameterless
+        /// constructor if there is no state resolver specified.
+        /// </summary>
         [TestMethod]
         public void StartWithParameterizedState()
         {
@@ -100,6 +111,9 @@ namespace Solid.State.Tests
             }
         }
 
+        /// <summary>
+        /// Tests that a state machine cannot start if it has no configured states.
+        /// </summary>
         [TestMethod]
         public void StartWithoutStates()
         {
@@ -117,6 +131,9 @@ namespace Solid.State.Tests
             }
         }
 
+        /// <summary>
+        /// Tests that the state machine cannot be used before it has been started.
+        /// </summary>
         [TestMethod]
         public void TriggerWithoutStarted()
         {
@@ -140,6 +157,9 @@ namespace Solid.State.Tests
             }
         }
 
+        /// <summary>
+        /// Tests that an exception is thrown if an invalid trigger is used.
+        /// </summary>
         [TestMethod]
         public void InvalidTriggerSequence()
         {
