@@ -10,12 +10,12 @@ namespace Solid.State.Tests
     {
         // Methods (IStateResolver)
 
-        public SolidState ResolveState(Type stateType)
+        public ISolidState ResolveState(Type stateType)
         {
             if (stateType == typeof(StateWithoutParameterlessConstructor))
                 return new StateWithoutParameterlessConstructor(666);
             else
-                return (SolidState) Activator.CreateInstance(stateType);
+                return (ISolidState) Activator.CreateInstance(stateType);
         }
 
         /// <summary>
