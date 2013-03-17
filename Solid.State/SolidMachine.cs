@@ -13,22 +13,14 @@ namespace Solid.State
         
         private bool _initialStateConfigured;
         private bool _isStarted;
+
+        private object _context;
         private IStateResolver _stateResolver;
 
         internal Dictionary<Type, StateConfiguration> _stateConfigurations;
         private bool _stateResolverRequired;
 
         // Private methods
-
-        /// <summary>
-        /// Checks if a state resolver will be required on state machine startup.
-        /// </summary>
-        /// <param name="stateType"></param>
-        internal void HandleResolverRequired(Type stateType)
-        {
-            // A state resolver is required if a configured state has no parameterless constructor
-            _stateResolverRequired = (stateType.GetConstructor(Type.EmptyTypes) == null);
-        }
 
         private void HandleMachineStarted()
         {
@@ -50,7 +42,8 @@ namespace Solid.State
         }
 
         /// <summary>
-        /// Creates an instance of a specified state type.
+        /// Creates an instance of a specified state type, either through .NET activation
+        /// or through a defined state resolver.
         /// </summary>
         /// <param name="stateType"></param>
         /// <returns></returns>
@@ -59,8 +52,28 @@ namespace Solid.State
             // Do we have a state resolver?
             if (_stateResolver != null)
                 return _stateResolver.ResolveState(stateType);
+
             // No, use standard .NET activator
             return (SolidState) Activator.CreateInstance(stateType);
+        }
+
+        /// <summary>
+        /// Checks if a state resolver will be required on state machine startup.
+        /// </summary>
+        /// <param name="stateType"></param>
+        private void HandleResolverRequired(Type stateType)
+        {
+            // A state resolver is required if a configured state has no parameterless constructor
+            _stateResolverRequired = (stateType.GetConstructor(Type.EmptyTypes) == null);
+        }
+
+        /// <summary>
+        /// Gets the object that should be used as state context.
+        /// </summary>
+        /// <returns></returns>
+        private object GetContext()
+        {
+            return _context ?? this;
         }
 
         // Constructor
@@ -70,8 +83,14 @@ namespace Solid.State
             _stateConfigurations = new Dictionary<Type, StateConfiguration>();
         }
 
-        public SolidMachine(IStateResolver stateResolver) : this()
+        public SolidMachine(object context) : this()
         {
+            _context = context;
+        }
+
+        public SolidMachine(object context, IStateResolver stateResolver) : this(context)
+        {
+            _context = context;
             _stateResolver = stateResolver;
         }
 
@@ -204,6 +223,16 @@ namespace Solid.State
                 else
                     return _currentState.StateInstance;
             }
+        }
+
+        /// <summary>
+        /// An arbitrary object that will be passed on to the states in their entry and exit methods.
+        /// If no context is defined, the state machine instance will be used as context.
+        /// </summary>
+        public object Context
+        {
+            get { return _context; }
+            set { _context = value; }
         }
 
         /// <summary>

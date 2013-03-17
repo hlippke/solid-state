@@ -62,6 +62,8 @@
     <Compile Include="TelephoneStates\RingingState.cs" />
     <Compile Include="TelephoneStates\WaitForAnswerState.cs" />
     <Compile Include="TestClassBase.cs" />
+    <Compile Include="TestStateMachine.cs" />
+    <Compile Include="TestStates\DateReportingState.cs" />
     <Compile Include="TestStates\StateWithoutParameterlessConstructor.cs" />
     <Compile Include="TestStates\TelephoneBrokenState.cs" />
   </ItemGroup>

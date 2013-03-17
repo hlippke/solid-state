@@ -42,7 +42,7 @@ namespace Solid.State
                 if (_stateInstance == null)
                     _stateInstance = _owningMachine.InstantiateState(_stateType);
 
-                _stateInstance.EnteringState();
+                _stateInstance.Entering(_owningMachine.GetContext());
             }
 
             /// <summary>
@@ -51,7 +51,7 @@ namespace Solid.State
             internal void Exit()
             {
                 if (_stateInstance != null)
-                    _stateInstance.ExitingState();
+                    _stateInstance.Exiting(_owningMachine.GetContext());
             }
 
             public StateConfiguration IsInitialState()
