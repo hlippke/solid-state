@@ -31,7 +31,7 @@ namespace Solid.State
 
             // Methods
 
-            public StateConfiguration GoesTo<TTargetState>() where TTargetState : SolidState
+            public StateConfiguration GoesTo<TTargetState>() where TTargetState : ISolidState
             {
                 _targetState = _owningStateConfiguration.OwningMachine.State<TTargetState>();
 

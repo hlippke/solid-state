@@ -77,7 +77,7 @@ namespace Solid.State
 
         // Public methods
 
-        public StateConfiguration State<TState>() where TState : SolidState
+        public StateConfiguration State<TState>() where TState : ISolidState
         {
             var type = typeof (TState);
             // Does the state have a parameterless constructor? Otherwise a state resolver is required
@@ -136,6 +136,30 @@ namespace Solid.State
             // Is it a single, unguarded trigger?
             if (triggers[0].GuardClause == null)
                 GotoState(triggers[0].TargetState);
+            else
+            {
+                TriggerConfiguration matchingTrigger = null;
+
+                foreach (var tr in triggers)
+                {
+                    if (tr.GuardClause())
+                    {
+                        if (matchingTrigger != null)
+                            throw new SolidStateException(string.Format(
+                                "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
+                                _currentState.StateType.Name, trigger));
+                        matchingTrigger = tr;
+                    }
+                }
+
+                // Did we find a matching trigger?
+                if (matchingTrigger == null)
+                    throw new SolidStateException(string.Format(
+                        "State {0}, trigger {1} has no guard clause that evaulate to True!",
+                        _currentState.StateType.Name, trigger));
+
+                GotoState(matchingTrigger.TargetState);
+            }
         }
 
         // Properties
@@ -171,7 +195,7 @@ namespace Solid.State
         /// <summary>
         /// Returns the state that the state machine is currently in.
         /// </summary>
-        public SolidState CurrentState
+        public ISolidState CurrentState
         {
             get
             {
