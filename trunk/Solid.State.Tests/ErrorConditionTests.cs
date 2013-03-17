@@ -60,6 +60,16 @@ namespace Solid.State.Tests
         }
 
         /// <summary>
+        /// Tests that if more than one guard clause of a state/trigger combination evaluates
+        /// to True, an exception is thrown.
+        /// </summary>
+        [TestMethod]
+        public void MultipleGuardsEvaluateToTrue()
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Tests that only one initial state is allowed.
         /// </summary>
         [TestMethod]
