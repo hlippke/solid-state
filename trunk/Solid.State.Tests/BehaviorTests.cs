@@ -6,8 +6,18 @@ using Solid.State.Tests.TestStates;
 namespace Solid.State.Tests
 {
     [TestClass]
-    public class BehaviorTests : TestClassBase
+    public class BehaviorTests : TestClassBase, IStateResolver
     {
+        // Methods (IStateResolver)
+
+        public SolidState ResolveState(Type stateType)
+        {
+            if (stateType == typeof(StateWithoutParameterlessConstructor))
+                return new StateWithoutParameterlessConstructor(666);
+            else
+                return (SolidState) Activator.CreateInstance(stateType);
+        }
+
         /// <summary>
         /// Tests that the first configured state becomes the initial state by default.
         /// </summary>
@@ -97,5 +107,58 @@ namespace Solid.State.Tests
                           string.Format("Telephone state is {0}, expected {1}", sm.CurrentState.GetType().Name, typeof(DiallingState).Name));
         }
 
+        [TestMethod]
+        public void UsingStateResolver()
+        {
+            // Lets this test class act as the state resolver...
+            var sm = new SolidMachine<TelephoneTrigger>(null, this);
+
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<StateWithoutParameterlessConstructor>();
+
+            sm.Start();
+
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+
+            Assert.IsTrue(sm.CurrentState is StateWithoutParameterlessConstructor);
+        }
+
+        /// <summary>
+        /// Tests that the state machine instance is used as state context if no explicit context is defined.
+        /// </summary>
+        [TestMethod]
+        public void UsingImplicitContext()
+        {
+            var sm = new TestStateMachine();
+            sm.CurrentDate = DateTime.MinValue.Date;
+
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<DateReportingState>();
+            sm.Start();
+
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+
+            // The state should've been able to use the default context (the state machine) to set its CurrentDate property
+            Assert.IsTrue(sm.CurrentDate.Equals(DateTime.Now.Date), "Wrong date in state machine!");
+        }
+
+        /// <summary>
+        /// Tests that the defined state machine context reaches the state in the Entering method.
+        /// </summary>
+        [TestMethod]
+        public void UsingExplicitContext()
+        {
+            var dateTime = new DateHolder();
+
+            var sm = new SolidMachine<TelephoneTrigger>(dateTime);
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<DateReportingState>();
+            sm.Start();
+
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+
+            // The state should be able to use the specified context (dateTime variable) to report the date.
+            Assert.IsTrue(dateTime.CurrentDate.Equals(DateTime.Now.Date), "Wrong date in context!");
+        }
     }
 }

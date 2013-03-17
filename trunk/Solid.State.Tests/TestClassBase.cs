@@ -7,16 +7,6 @@ namespace Solid.State.Tests
     /// </summary>
     public class TestClassBase
     {
-        protected enum TelephoneTrigger
-        {
-            PickingUpPhone,
-            NotAnswering,
-            IncomingCall,
-            DialedNumber,
-            Answered,
-            HangingUp
-        }
-
         protected SolidMachine<TelephoneTrigger> BuildTelephoneStateMachine()
         {
             var sm = new SolidMachine<TelephoneTrigger>();
@@ -46,5 +36,15 @@ namespace Solid.State.Tests
 
             return sm;
         }
+    }
+
+    public enum TelephoneTrigger
+    {
+        PickingUpPhone,
+        NotAnswering,
+        IncomingCall,
+        DialedNumber,
+        Answered,
+        HangingUp
     }
 }

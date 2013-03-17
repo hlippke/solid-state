@@ -5,8 +5,8 @@
     /// </summary>
     public interface ISolidState
     {
-        void EnteringState();
+        void Entering(object context);
 
-        void ExitingState();
+        void Exiting(object context);
     }
 }

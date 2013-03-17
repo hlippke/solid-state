@@ -2,12 +2,14 @@
 {
     public abstract class SolidState : ISolidState
     {
-        public virtual void EnteringState()
+        public virtual void Entering(object context)
         {
+            // No code
         }
 
-        public virtual void ExitingState()
+        public virtual void Exiting(object context)
         {
+            // No code
         }
     }
 }
