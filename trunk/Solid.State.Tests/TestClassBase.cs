@@ -10,7 +10,7 @@ namespace Solid.State.Tests
         protected enum TelephoneTrigger
         {
             PickingUpPhone,
-            RefusingToAnswer,
+            NotAnswering,
             IncomingCall,
             DialedNumber,
             Answered,
@@ -28,14 +28,16 @@ namespace Solid.State.Tests
 
             sm.State<RingingState>()
                 .On(TelephoneTrigger.PickingUpPhone).GoesTo<ConversationState>()
-                .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
+                .On(TelephoneTrigger.NotAnswering).GoesTo<IdleState>();
 
             sm.State<DiallingState>()
-                .On(TelephoneTrigger.DialedNumber).GoesTo<WaitForAnswerState>();
+                .On(TelephoneTrigger.DialedNumber).GoesTo<WaitForAnswerState>()
+                .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
 
             sm.State<WaitForAnswerState>()
                 .On(TelephoneTrigger.Answered).GoesTo<ConversationState>()
-                .On(TelephoneTrigger.RefusingToAnswer).GoesTo<IdleState>();
+                .On(TelephoneTrigger.NotAnswering).GoesTo<IdleState>()
+                .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
 
             sm.State<ConversationState>()
                 .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
