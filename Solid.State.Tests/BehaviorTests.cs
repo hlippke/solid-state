@@ -6,7 +6,7 @@ using Solid.State.Tests.TestStates;
 namespace Solid.State.Tests
 {
     [TestClass]
-    public class StateMachineTests : TestClassBase
+    public class BehaviorTests : TestClassBase
     {
         /// <summary>
         /// Tests that the first configured state becomes the initial state by default.
@@ -44,7 +44,7 @@ namespace Solid.State.Tests
             sm.State<RingingState>()
                 .IsInitialState()
                 .On(TelephoneTrigger.PickingUpPhone).GoesTo<ConversationState>()
-                .On(TelephoneTrigger.RefusingToAnswer).GoesTo<IdleState>();
+                .On(TelephoneTrigger.NotAnswering).GoesTo<IdleState>();
 
             sm.Start();
 
@@ -75,7 +75,7 @@ namespace Solid.State.Tests
 
             sm.State<RingingState>()
                 .On(TelephoneTrigger.PickingUpPhone).GoesTo<ConversationState>()
-                .On(TelephoneTrigger.RefusingToAnswer).GoesTo<IdleState>();
+                .On(TelephoneTrigger.NotAnswering).GoesTo<IdleState>();
 
             sm.State<TelephoneBrokenState>()
                 .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
