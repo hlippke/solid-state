@@ -66,7 +66,26 @@ namespace Solid.State.Tests
         [TestMethod]
         public void MultipleGuardsEvaluateToTrue()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var sm = new SolidMachine<TelephoneTrigger>();
+
+                sm.State<IdleState>()
+                    .IsInitialState()
+                    .On(TelephoneTrigger.PickingUpPhone, () => ((1 + 1) == 2)).GoesTo<DiallingState>()
+                    .On(TelephoneTrigger.PickingUpPhone, () => ((6 / 2) == 3)).GoesTo<RingingState>();
+
+                sm.Start();
+
+                sm.Trigger(TelephoneTrigger.PickingUpPhone);
+
+                Assert.Fail("Multiple guard clauses that return True as permitted!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Assert.IsTrue(ex is SolidStateException);
+            }
         }
 
         /// <summary>

@@ -160,5 +160,32 @@ namespace Solid.State.Tests
             // The state should be able to use the specified context (dateTime variable) to report the date.
             Assert.IsTrue(dateTime.CurrentDate.Equals(DateTime.Now.Date), "Wrong date in context!");
         }
+        
+        [TestMethod]
+        public void ConfigurationReentrantState()
+        {
+            var sm = new TestStateMachine();
+
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<CountingState>();
+
+            sm.State<CountingState>()
+                .On(TelephoneTrigger.DialedNumber).GoesTo<CountingState>()
+                .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
+
+            sm.Start();
+
+            // Goto CountingState, EnteringCount should be 1
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+            Assert.IsTrue(sm.EnteringCount == 1, "EnteringCount != 1");
+
+            // Reentry
+            sm.Trigger(TelephoneTrigger.DialedNumber);
+            Assert.IsTrue((sm.EnteringCount == 2) && (sm.ExitingCount == 1), "EnteringCount != 2 || ExitingCount != 1");
+
+            // Back to Idle
+            sm.Trigger(TelephoneTrigger.HangingUp);
+            Assert.IsTrue((sm.EnteringCount == 2) && (sm.ExitingCount == 2), "EnteringCount != 2 || ExitingCount != 2");
+        }
     }
 }

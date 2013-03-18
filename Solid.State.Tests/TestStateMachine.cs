@@ -6,6 +6,10 @@ namespace Solid.State.Tests
     {
         // Properties
 
+        public int EnteringCount { get; set; }
+
+        public int ExitingCount { get; set; }
+
         public DateTime CurrentDate { get; set; }
     }
 }
