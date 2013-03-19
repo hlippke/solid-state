@@ -6,14 +6,26 @@
     /// </summary>
     public abstract class SolidState : ISolidState
     {
-        public virtual void Entering(object context)
+        // Protected methods
+
+        protected virtual void DoEntering(object context)
         {
             // No code
         }
 
-        public virtual void Exiting(object context)
+        protected virtual void DoExiting(object context)
         {
             // No code
+        }
+
+        public void Entering(object context)
+        {
+            DoEntering(context);
+        }
+
+        public void Exiting(object context)
+        {
+            DoExiting(context);
         }
     }
 }

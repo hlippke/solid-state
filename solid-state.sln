@@ -5,6 +5,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solid.State", "Solid.State\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solid.State.Tests", "Solid.State.Tests\Solid.State.Tests.csproj", "{2673CBE7-95DC-44CC-AB42-2165DC07F693}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelephoneSample", "TelephoneSample\TelephoneSample.csproj", "{3AFDF50D-14B8-4DE3-8015-50C172D5ADB3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{A1CDF396-A885-4B6E-8B8A-90367F5B0C07}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +28,10 @@ Global
 		{2673CBE7-95DC-44CC-AB42-2165DC07F693}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2673CBE7-95DC-44CC-AB42-2165DC07F693}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2673CBE7-95DC-44CC-AB42-2165DC07F693}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AFDF50D-14B8-4DE3-8015-50C172D5ADB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AFDF50D-14B8-4DE3-8015-50C172D5ADB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AFDF50D-14B8-4DE3-8015-50C172D5ADB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AFDF50D-14B8-4DE3-8015-50C172D5ADB3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

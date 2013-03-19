@@ -151,6 +151,7 @@ namespace Solid.State.Tests
             var dateTime = new DateHolder();
 
             var sm = new SolidMachine<TelephoneTrigger>(dateTime);
+
             sm.State<IdleState>()
                 .On(TelephoneTrigger.PickingUpPhone).GoesTo<DateReportingState>();
             sm.Start();

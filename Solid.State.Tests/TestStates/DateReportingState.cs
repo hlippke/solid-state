@@ -7,7 +7,7 @@ namespace Solid.State.Tests.TestStates
     /// </summary>
     public class DateReportingState : SolidState
     {
-        public override void Entering(object context)
+        protected override void DoEntering(object context)
         {
             if (context is TestStateMachine)
             {
