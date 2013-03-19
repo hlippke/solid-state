@@ -15,13 +15,13 @@ namespace Solid.State.Tests.TestStates
 
         // Methods
 
-        public override void Entering(object context)
+        protected override void DoEntering(object context)
         {
             // Write the number to console
             Console.WriteLine("Entering {0} : number = {1}", this.GetType().Name, _number);
         }
 
-        public override void Exiting(object context)
+        protected override void DoExiting(object context)
         {
             Console.WriteLine("Exiting {0}", this.GetType().Name);
         }

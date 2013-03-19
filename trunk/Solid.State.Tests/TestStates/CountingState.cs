@@ -2,14 +2,14 @@
 {
     public class CountingState : SolidState
     {
-        public override void Entering(object context)
+        protected override void DoEntering(object context)
         {
             // Increase the number on the state machines EnteringCount
             var machine = context as TestStateMachine;
             machine.EnteringCount++;
         }
 
-        public override void Exiting(object context)
+        protected override void DoExiting(object context)
         {
             var machine = context as TestStateMachine;
             machine.ExitingCount++;

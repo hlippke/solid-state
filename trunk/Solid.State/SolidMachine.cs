@@ -30,11 +30,19 @@ namespace Solid.State
 
         private void GotoState(StateConfiguration state)
         {
+            Type previousState = null;
+
             // Are we leaving a state?
             if (_currentState != null)
+            {
+                previousState = _currentState.StateType;
                 _currentState.Exit();
+            }
 
             _currentState = state;
+
+            // Raise an event about the transition
+            OnTransitioned(new TransitionedEventArgs(previousState, _currentState.StateType));
 
             // Are we entering a new state?
             if (_currentState != null)
@@ -82,6 +90,27 @@ namespace Solid.State
             return _context ?? this;
         }
 
+        private List<TTrigger> GetValidTriggers()
+        {
+            if (!_isStarted || (_currentState == null))
+                return new List<TTrigger>();
+
+            // Return a distinct list (no duplicates) of triggers
+            return _currentState.TriggerConfigurations.Select(x => x.Trigger).Distinct().ToList();
+        }
+
+        // Protected methods
+
+        /// <summary>
+        /// Raises the Transitioned event.
+        /// </summary>
+        /// <param name="eventArgs"></param>
+        protected virtual void OnTransitioned(TransitionedEventArgs eventArgs)
+        {
+            if (Transitioned != null)
+                Transitioned(this, eventArgs);
+        }
+
         // Constructor
 
         public SolidMachine()
@@ -99,6 +128,13 @@ namespace Solid.State
             _context = context;
             _stateResolver = stateResolver;
         }
+
+        // Events
+
+        /// <summary>
+        /// Raised when the state machine has transitioned from one state to another.
+        /// </summary>
+        public event TransitionedEventHandler Transitioned;
 
         // Public methods
 
@@ -134,7 +170,7 @@ namespace Solid.State
             if (_initialState == null)
                 throw new SolidStateException("No states have been configured!");
 
-            // Is a state resolver required without us having one?
+            // If there are states that has no parameterless constructor, we must provide set the StateResolver property.
             if (_stateResolverRequired && (_stateResolver == null))
                 throw new SolidStateException(
                     "One or more configured states has no parameterless constructor. Add such constructors or make sure that the StateResolver property is set!");
@@ -223,6 +259,15 @@ namespace Solid.State
                 else
                     return _currentState.StateInstance;
             }
+        }
+
+        /// <summary>
+        /// A list of the triggers that are valid to use on the current state.
+        /// If the machine has been started, this list is empty.
+        /// </summary>
+        public List<TTrigger> ValidTriggers
+        {
+            get { return GetValidTriggers(); }
         }
 
         /// <summary>
