@@ -11,49 +11,50 @@ using TelephoneSample.Telephone;
 
 namespace TelephoneSample
 {
+    public enum TelephoneTrigger
+    {
+        PickingUpPhone,
+        IncomingCall,
+        IgnoreIncomingCall,
+        FinishedDialling,
+        AnswerInOtherEnd,
+        MeHangingUp,
+        OtherEndHangingUp
+    }
+
     public partial class MainForm : Form
     {
-        // Public constants
-
-        public const int PICKING_UP_PHONE = 0;
-        public const int INCOMING_CALL = 1;
-        public const int NO_ANSWER = 2;
-        public const int FINISHED_DIALING = 3;
-        public const int HANGING_UP = 4;
-        public const int ANSWERED = 5;
-        public const int LINE_BUSY = 6;
-
         // Private variables
 
-        private SolidMachine<int> _sm;
+        private SolidMachine<TelephoneTrigger> _sm;
 
         // Private methods
 
         private void ConfigureTelephone()
         {
-            _sm = new TelephoneMachine();
+            _sm = new SolidMachine<TelephoneTrigger>(this);
             
             _sm.State<IdleState>()
                 .IsInitialState()
-                .On(PICKING_UP_PHONE).GoesTo<DiallingState>()
-                .On(INCOMING_CALL).GoesTo<RingingState>();
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<DiallingState>()
+                .On(TelephoneTrigger.IncomingCall).GoesTo<RingingState>();
 
             _sm.State<RingingState>()
-                .On(PICKING_UP_PHONE).GoesTo<ConversationState>()
-                .On(NO_ANSWER).GoesTo<IdleState>();
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<ConversationState>()
+                .On(TelephoneTrigger.IgnoreIncomingCall).GoesTo<IdleState>();
 
             _sm.State<DiallingState>()
-                .On(FINISHED_DIALING, () => !IsLineBusy).GoesTo<WaitForAnswerState>()
-                .On(FINISHED_DIALING, () => IsLineBusy).GoesTo<LineBusyState>()
-                .On(HANGING_UP).GoesTo<IdleState>();
+                .On(TelephoneTrigger.FinishedDialling, () => !IsLineBusy).GoesTo<WaitForAnswerState>()
+                .On(TelephoneTrigger.FinishedDialling, () => IsLineBusy).GoesTo<LineBusyState>()
+                .On(TelephoneTrigger.MeHangingUp).GoesTo<IdleState>();
 
             _sm.State<WaitForAnswerState>()
-                .On(ANSWERED).GoesTo<ConversationState>()
-                .On(LINE_BUSY).GoesTo<IdleState>()
-                .On(HANGING_UP).GoesTo<IdleState>();
+                .On(TelephoneTrigger.AnswerInOtherEnd).GoesTo<ConversationState>()
+                .On(TelephoneTrigger.MeHangingUp).GoesTo<IdleState>();
 
             _sm.State<ConversationState>()
-                .On(HANGING_UP).GoesTo<IdleState>();
+                .On(TelephoneTrigger.MeHangingUp).GoesTo<IdleState>()
+                .On(TelephoneTrigger.OtherEndHangingUp).GoesTo<LineDisconnectedState>();
 
             _sm.Start();
         }

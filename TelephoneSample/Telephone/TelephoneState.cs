@@ -10,12 +10,12 @@ namespace TelephoneSample.Telephone
     {
         // Protected methods
 
-        protected virtual void DoEntering(TelephoneMachine machine)
+        protected virtual void DoEntering(SolidMachine<TelephoneTrigger> machine)
         {
             // No code
         }
 
-        protected virtual void DoExiting(TelephoneMachine machine)
+        protected virtual void DoExiting(SolidMachine<TelephoneTrigger> machine)
         {
             // No code
         }
@@ -25,13 +25,13 @@ namespace TelephoneSample.Telephone
         public void Entering(object context)
         {
             // Redirect to protected methods and cast context
-            DoEntering(context as TelephoneMachine);
+            DoEntering(context as SolidMachine<TelephoneTrigger>);
         }
 
         public void Exiting(object context)
         {
             // Redirect to protected methods and cast context
-            DoExiting(context as TelephoneMachine);
+            DoExiting(context as SolidMachine<TelephoneTrigger>);
         }
     }
 }

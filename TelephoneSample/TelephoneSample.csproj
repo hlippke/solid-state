@@ -67,8 +67,8 @@
     <Compile Include="Telephone\DiallingState.cs" />
     <Compile Include="Telephone\IdleState.cs" />
     <Compile Include="Telephone\LineBusyState.cs" />
+    <Compile Include="Telephone\LineDisconnectedState.cs" />
     <Compile Include="Telephone\RingingState.cs" />
-    <Compile Include="Telephone\TelephoneMachine.cs" />
     <Compile Include="Telephone\TelephoneState.cs" />
     <Compile Include="Telephone\WaitForAnswerState.cs" />
     <EmbeddedResource Include="MainForm.resx">
