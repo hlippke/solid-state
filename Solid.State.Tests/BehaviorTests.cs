@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Solid.State.Tests.TelephoneStates;
 using Solid.State.Tests.TestStates;
@@ -12,7 +13,7 @@ namespace Solid.State.Tests
 
         public ISolidState ResolveState(Type stateType)
         {
-            if (stateType == typeof(StateWithoutParameterlessConstructor))
+            if (stateType == typeof (StateWithoutParameterlessConstructor))
                 return new StateWithoutParameterlessConstructor(666);
             else
                 return (ISolidState) Activator.CreateInstance(stateType);
@@ -95,8 +96,9 @@ namespace Solid.State.Tests
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
             Assert.IsTrue(sm.CurrentState is TelephoneBrokenState,
-                          string.Format("Telephone state is {0}, expected {1}", sm.CurrentState.GetType().Name, typeof(TelephoneBrokenState).Name));
-            
+                          string.Format("Telephone state is {0}, expected {1}", sm.CurrentState.GetType().Name,
+                                        typeof (TelephoneBrokenState).Name));
+
             // Reset the machine to IdleState
             sm.Trigger(TelephoneTrigger.HangingUp);
 
@@ -104,7 +106,8 @@ namespace Solid.State.Tests
 
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
             Assert.IsTrue(sm.CurrentState is DiallingState,
-                          string.Format("Telephone state is {0}, expected {1}", sm.CurrentState.GetType().Name, typeof(DiallingState).Name));
+                          string.Format("Telephone state is {0}, expected {1}", sm.CurrentState.GetType().Name,
+                                        typeof (DiallingState).Name));
         }
 
         [TestMethod]
@@ -161,7 +164,7 @@ namespace Solid.State.Tests
             // The state should be able to use the specified context (dateTime variable) to report the date.
             Assert.IsTrue(dateTime.CurrentDate.Equals(DateTime.Now.Date), "Wrong date in context!");
         }
-        
+
         [TestMethod]
         public void ConfigurationReentrantState()
         {
@@ -187,6 +190,44 @@ namespace Solid.State.Tests
             // Back to Idle
             sm.Trigger(TelephoneTrigger.HangingUp);
             Assert.IsTrue((sm.EnteringCount == 2) && (sm.ExitingCount == 2), "EnteringCount != 2 || ExitingCount != 2");
+        }
+
+        /// <summary>
+        /// Tests that transitions are performed in the correct order even if a trigger is fired inside a state's
+        /// Entering method.
+        /// </summary>
+        [TestMethod]
+        public void CorrectOrderOnTransitions()
+        {
+            var states = new List<string>();
+
+            var sm = new SolidMachine<int>();
+            sm.Transitioned += (sender, args) =>
+                {
+                    var stateName = args.TargetState.Name;
+                    Console.WriteLine("Transitioned to " + stateName);
+
+                    states.Add(stateName);
+                    if (states.Count == 5)
+                    {
+                        var stateOrder = string.Join("_", states);
+                        Assert.IsTrue(stateOrder == "IdleState_StepState1_StepState2_StepState3_StepState4",
+                                      string.Format("Wrong state order: {0}", stateOrder));
+                    }
+
+                };
+
+            sm.State<IdleState>()
+                .On(0).GoesTo<StepState1>();
+            sm.State<StepState1>()
+                .On(1).GoesTo<StepState2>();
+            sm.State<StepState2>()
+                .On(2).GoesTo<StepState3>();
+            sm.State<StepState3>()
+                .On(3).GoesTo<StepState4>();
+            sm.Start();
+
+            sm.Trigger(0);
         }
     }
 }

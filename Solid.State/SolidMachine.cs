@@ -8,6 +8,10 @@ namespace Solid.State
     {
         // Variables
 
+        private readonly object _queueLockObject = new object();
+
+        private List<Action> _transitionQueue; 
+
         private StateConfiguration _initialState;
         private StateConfiguration _currentState;
         
@@ -19,6 +23,7 @@ namespace Solid.State
 
         internal Dictionary<Type, StateConfiguration> _stateConfigurations;
         private bool _stateResolverRequired;
+        private bool _isProcessingQueue;
 
         // Private methods
 
@@ -28,9 +33,11 @@ namespace Solid.State
                 throw new SolidStateException("State machine is not started!");
         }
 
-        private void GotoState(StateConfiguration state)
+        private void ExecuteTransition(StateConfiguration state)
         {
+            Console.WriteLine("ExecuteTransition : " + state.StateType.Name);
             Type previousState = null;
+            Type currentState = null;
 
             // Are we leaving a state?
             if (_currentState != null)
@@ -41,12 +48,69 @@ namespace Solid.State
 
             _currentState = state;
 
-            // Raise an event about the transition
-            OnTransitioned(new TransitionedEventArgs(previousState, _currentState.StateType));
-
             // Are we entering a new state?
             if (_currentState != null)
+            {
+                currentState = _currentState.StateType;
                 _currentState.Enter();
+            }
+
+            // Raise an event about the transition
+            OnTransitioned(new TransitionedEventArgs(previousState, currentState));
+        }
+
+        private void ProcessTransitionQueue()
+        {
+            if (_isProcessingQueue)
+                return;
+
+            try
+            {
+                Console.WriteLine("ProcessTransitionQueue");
+
+                _isProcessingQueue = true;
+
+                do
+                {
+                    Action nextAction = null;
+
+                    // Lock queue during readout of next action
+                    lock (_queueLockObject)
+                    {
+                        if (_transitionQueue.Count == 0)
+                            return;
+
+                        nextAction = _transitionQueue[0];
+                        _transitionQueue.RemoveAt(0);
+                    }
+
+                    if (nextAction != null)
+                        nextAction();
+                } while (true);
+            }
+            finally
+            {
+                _isProcessingQueue = false;
+            }
+        }
+
+        /// <summary>
+        /// Queues up a transition to a new state.
+        /// </summary>
+        /// <param name="state"></param>
+        private void GotoState(StateConfiguration state)
+        {
+            // Add to queue
+            var processQueueNeeded = false;
+
+            lock (_queueLockObject)
+            {
+                var localState = state;
+                _transitionQueue.Add(() => ExecuteTransition(localState));
+            }
+
+            // Do we need to process the queue? Do it outside lock
+            ProcessTransitionQueue();
         }
 
         private void SetInitialState(StateConfiguration initialStateConfiguration)
@@ -68,7 +132,7 @@ namespace Solid.State
                 return _stateResolver.ResolveState(stateType);
 
             // No, use standard .NET activator
-            return (SolidState) Activator.CreateInstance(stateType);
+            return (ISolidState) Activator.CreateInstance(stateType);
         }
 
         /// <summary>
@@ -116,6 +180,7 @@ namespace Solid.State
         public SolidMachine()
         {
             _stateConfigurations = new Dictionary<Type, StateConfiguration>();
+            _transitionQueue = new List<Action>();
         }
 
         public SolidMachine(object context) : this()
@@ -219,6 +284,7 @@ namespace Solid.State
                         "State {0}, trigger {1} has no guard clause that evaulate to True!",
                         _currentState.StateType.Name, trigger));
 
+                // Queue up the transition
                 GotoState(matchingTrigger.TargetState);
             }
         }

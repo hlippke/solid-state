@@ -1,6 +1,8 @@
-﻿namespace TelephoneSample
+﻿using Solid.State;
+
+namespace TelephoneSample
 {
-    partial class MainForm
+    partial class MainForm : IStateResolver
     {
         /// <summary>
         /// Required designer variable.
@@ -42,7 +44,7 @@
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.pnlState = new System.Windows.Forms.Panel();
             this.lblState = new System.Windows.Forms.Label();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.tbLog = new System.Windows.Forms.TextBox();
             this.gboxTriggers.SuspendLayout();
             this.gboxConditions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -76,6 +78,7 @@
             this.button8.Tag = "IgnoreIncomingCall";
             this.button8.Text = "I ignore the incoming call";
             this.button8.UseVisualStyleBackColor = false;
+            this.button8.Click += new System.EventHandler(this.TriggerButton_Click);
             // 
             // button6
             // 
@@ -88,6 +91,7 @@
             this.button6.Tag = "OtherEndHangingUp";
             this.button6.Text = "Other end is hanging up";
             this.button6.UseVisualStyleBackColor = false;
+            this.button6.Click += new System.EventHandler(this.TriggerButton_Click);
             // 
             // button5
             // 
@@ -100,6 +104,7 @@
             this.button5.Tag = "MeHangingUp";
             this.button5.Text = "I\'m hanging up";
             this.button5.UseVisualStyleBackColor = false;
+            this.button5.Click += new System.EventHandler(this.TriggerButton_Click);
             // 
             // button3
             // 
@@ -112,6 +117,7 @@
             this.button3.Tag = "AnswerInOtherEnd";
             this.button3.Text = "The other end answered";
             this.button3.UseVisualStyleBackColor = false;
+            this.button3.Click += new System.EventHandler(this.TriggerButton_Click);
             // 
             // button2
             // 
@@ -121,8 +127,10 @@
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(188, 25);
             this.button2.TabIndex = 3;
-            this.button2.Text = "FinishedDialling";
+            this.button2.Tag = "FinishedDialling";
+            this.button2.Text = "I have finished dialling";
             this.button2.UseVisualStyleBackColor = false;
+            this.button2.Click += new System.EventHandler(this.TriggerButton_Click);
             // 
             // btnIncomingCall
             // 
@@ -135,6 +143,7 @@
             this.btnIncomingCall.Tag = "IncomingCall";
             this.btnIncomingCall.Text = "There is an incoming call";
             this.btnIncomingCall.UseVisualStyleBackColor = false;
+            this.btnIncomingCall.Click += new System.EventHandler(this.TriggerButton_Click);
             // 
             // btnPickUpPhone
             // 
@@ -147,6 +156,7 @@
             this.btnPickUpPhone.Tag = "PickingUpPhone";
             this.btnPickUpPhone.Text = "I pick up the phone";
             this.btnPickUpPhone.UseVisualStyleBackColor = false;
+            this.btnPickUpPhone.Click += new System.EventHandler(this.TriggerButton_Click);
             // 
             // gboxConditions
             // 
@@ -199,19 +209,19 @@
             this.lblState.Text = "Current state";
             this.lblState.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // textBox1
+            // tbLog
             // 
-            this.textBox1.Location = new System.Drawing.Point(13, 340);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(472, 225);
-            this.textBox1.TabIndex = 4;
+            this.tbLog.Location = new System.Drawing.Point(13, 340);
+            this.tbLog.Multiline = true;
+            this.tbLog.Name = "tbLog";
+            this.tbLog.Size = new System.Drawing.Size(472, 225);
+            this.tbLog.TabIndex = 4;
             // 
             // MainForm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(499, 580);
-            this.Controls.Add(this.textBox1);
+            this.Controls.Add(this.tbLog);
             this.Controls.Add(this.pnlState);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.gboxConditions);
@@ -240,7 +250,7 @@
         private System.Windows.Forms.Panel pnlState;
         private System.Windows.Forms.Label lblState;
         private System.Windows.Forms.Button btnPickUpPhone;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox tbLog;
         private System.Windows.Forms.Button btnIncomingCall;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Button button3;

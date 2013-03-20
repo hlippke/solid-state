@@ -66,6 +66,7 @@
     <Compile Include="TestStates\CountingState.cs" />
     <Compile Include="TestStates\DateReportingState.cs" />
     <Compile Include="TestStates\StateWithoutParameterlessConstructor.cs" />
+    <Compile Include="TestStates\StepStateBase.cs" />
     <Compile Include="TestStates\TelephoneBrokenState.cs" />
   </ItemGroup>
   <ItemGroup>
