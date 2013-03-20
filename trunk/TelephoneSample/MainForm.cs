@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
+using Autofac;
 using Solid.State;
 using TelephoneSample.Telephone;
-using Autofac;
 using TelephoneSample.TelephoneParts;
 
 namespace TelephoneSample
@@ -37,12 +36,13 @@ namespace TelephoneSample
         private void ConfigureAutofac()
         {
             var builder = new ContainerBuilder();
-            
+
             // Register all states (implementing the ISolidState interface)
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).Where(
                 x => typeof (ISolidState).IsAssignableFrom(x)).AsSelf();
 
             // Register telephone parts (the different states will request these in the constructor)
+            builder.RegisterType<Bell>().SingleInstance();
             builder.RegisterType<Microphone>().SingleInstance();
             builder.RegisterType<Speaker>().SingleInstance();
             builder.RegisterType<Keypad>().SingleInstance();
@@ -75,6 +75,9 @@ namespace TelephoneSample
             _sm.State<DiallingState>()
                 .On(TelephoneTrigger.FinishedDialling, () => !IsLineBusy).GoesTo<WaitForAnswerState>()
                 .On(TelephoneTrigger.FinishedDialling, () => IsLineBusy).GoesTo<LineBusyState>()
+                .On(TelephoneTrigger.MeHangingUp).GoesTo<IdleState>();
+
+            _sm.State<LineBusyState>()
                 .On(TelephoneTrigger.MeHangingUp).GoesTo<IdleState>();
 
             _sm.State<WaitForAnswerState>()
@@ -185,7 +188,12 @@ namespace TelephoneSample
         {
             // Cannot count on this coming on the UI thread, may need to Invoke
             if (!InvokeRequired)
+            {
+                // Add to log and scroll to end
                 tbLog.Text += message;
+                tbLog.SelectionStart = tbLog.Text.Length;
+                tbLog.ScrollToCaret();
+            }
             else
                 Invoke(new Action<string>(Write), message);
         }

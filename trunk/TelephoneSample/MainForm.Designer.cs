@@ -214,6 +214,7 @@ namespace TelephoneSample
             this.tbLog.Location = new System.Drawing.Point(13, 340);
             this.tbLog.Multiline = true;
             this.tbLog.Name = "tbLog";
+            this.tbLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.tbLog.Size = new System.Drawing.Size(472, 225);
             this.tbLog.TabIndex = 4;
             // 
@@ -227,9 +228,12 @@ namespace TelephoneSample
             this.Controls.Add(this.gboxConditions);
             this.Controls.Add(this.gboxTriggers);
             this.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
+            this.MaximizeBox = false;
             this.Name = "MainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "solid-state telephone sample";
             this.gboxTriggers.ResumeLayout(false);
             this.gboxConditions.ResumeLayout(false);
