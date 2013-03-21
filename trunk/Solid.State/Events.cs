@@ -29,11 +29,17 @@ namespace Solid.State
 
         // Properties
 
+        /// <summary>
+        /// The source state of the transition.
+        /// </summary>
         public Type SourceState
         {
             get { return _sourceState; }
         }
 
+        /// <summary>
+        /// The target state of the transition.
+        /// </summary>
         public Type TargetState
         {
             get { return _targetState; }

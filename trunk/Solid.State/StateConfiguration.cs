@@ -56,7 +56,7 @@ namespace Solid.State
 
             public StateConfiguration IsInitialState()
             {
-                if (_owningMachine.InitialStateConfigured)
+                if (_owningMachine._initialStateConfigured)
                     throw new SolidStateException(
                         "The state machine cannot have multiple states configured as the initial state!");
 

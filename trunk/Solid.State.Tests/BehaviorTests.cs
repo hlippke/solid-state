@@ -229,5 +229,30 @@ namespace Solid.State.Tests
 
             sm.Trigger(0);
         }
+
+        [TestMethod]
+        public void InvalidTriggerWithHandler()
+        {
+            var _handlerCalledMessage = "";
+
+            var sm = new SolidMachine<TelephoneTrigger>();
+            sm.OnInvalidTrigger((state, trigger) =>
+                { _handlerCalledMessage = string.Format("{0}_{1}", state.Name, trigger); });
+
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<DiallingState>();
+
+            sm.State<DiallingState>()
+                .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
+
+            sm.Start();
+
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+
+            Assert.IsTrue(_handlerCalledMessage ==
+                          string.Format("{0}_{1}", typeof (DiallingState).Name, TelephoneTrigger.PickingUpPhone),
+                          string.Format("HandlerCalledMessage not what expected : {0}", _handlerCalledMessage));
+        }
     }
 }
