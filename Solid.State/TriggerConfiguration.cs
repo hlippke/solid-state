@@ -37,7 +37,7 @@ namespace Solid.State
 
                 // Return the correct StateConfiguration
                 var machine = _owningStateConfiguration.OwningMachine;
-                return machine.StateConfigurations[_owningStateConfiguration.StateType];
+                return machine._stateConfigurations[_owningStateConfiguration.StateType];
             }
 
             // Properties
