@@ -10,7 +10,7 @@ namespace Solid.State
 
         private readonly object _queueLockObject = new object();
 
-        private List<Action> _transitionQueue; 
+        private readonly List<Action> _transitionQueue; 
 
         private StateConfiguration _initialState;
         private StateConfiguration _currentState;
@@ -21,7 +21,9 @@ namespace Solid.State
         private object _context;
         private IStateResolver _stateResolver;
 
-        internal Dictionary<Type, StateConfiguration> _stateConfigurations;
+        private Action<Type, TTrigger> _invalidTriggerHandler;
+
+        private Dictionary<Type, StateConfiguration> _stateConfigurations;
         private bool _stateResolverRequired;
         private bool _isProcessingQueue;
 
@@ -35,7 +37,6 @@ namespace Solid.State
 
         private void ExecuteTransition(StateConfiguration state)
         {
-            Console.WriteLine("ExecuteTransition : " + state.StateType.Name);
             Type previousState = null;
             Type currentState = null;
 
@@ -66,8 +67,6 @@ namespace Solid.State
 
             try
             {
-                Console.WriteLine("ProcessTransitionQueue");
-
                 _isProcessingQueue = true;
 
                 do
@@ -235,7 +234,7 @@ namespace Solid.State
             if (_initialState == null)
                 throw new SolidStateException("No states have been configured!");
 
-            // If there are states that has no parameterless constructor, we must provide set the StateResolver property.
+            // If there are states that has no parameterless constructor, we must have set the StateResolver property.
             if (_stateResolverRequired && (_stateResolver == null))
                 throw new SolidStateException(
                     "One or more configured states has no parameterless constructor. Add such constructors or make sure that the StateResolver property is set!");
@@ -244,6 +243,15 @@ namespace Solid.State
 
             // Transition to initial state
             GotoState(_initialState);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="invalidTriggerHandler"></param>
+        public void OnInvalidTrigger(Action<Type, TTrigger> invalidTriggerHandler)
+        {
+            _invalidTriggerHandler = invalidTriggerHandler;
         }
 
         /// <summary>
@@ -256,49 +264,48 @@ namespace Solid.State
 
             var triggers = _currentState.TriggerConfigurations.Where(x => x.Trigger.Equals(trigger)).ToList();
             if (triggers.Count == 0)
-                throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!", trigger,
+            {
+                // Do we have a handler for the situation?
+                if (_invalidTriggerHandler == null)
+                    throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!", trigger,
                                                             _currentState.StateType.Name));
-
-            // Is it a single, unguarded trigger?
-            if (triggers[0].GuardClause == null)
-                GotoState(triggers[0].TargetState);
+                // Let the handler decide what to do
+                _invalidTriggerHandler(_currentState.StateType, trigger);
+            }
             else
             {
-                TriggerConfiguration matchingTrigger = null;
-
-                foreach (var tr in triggers)
+                // Is it a single, unguarded trigger?
+                if (triggers[0].GuardClause == null)
+                    GotoState(triggers[0].TargetState);
+                else
                 {
-                    if (tr.GuardClause())
+                    TriggerConfiguration matchingTrigger = null;
+
+                    foreach (var tr in triggers)
                     {
-                        if (matchingTrigger != null)
-                            throw new SolidStateException(string.Format(
-                                "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
-                                _currentState.StateType.Name, trigger));
-                        matchingTrigger = tr;
+                        if (tr.GuardClause())
+                        {
+                            if (matchingTrigger != null)
+                                throw new SolidStateException(string.Format(
+                                    "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
+                                    _currentState.StateType.Name, trigger));
+                            matchingTrigger = tr;
+                        }
                     }
+
+                    // Did we find a matching trigger?
+                    if (matchingTrigger == null)
+                        throw new SolidStateException(string.Format(
+                            "State {0}, trigger {1} has no guard clause that evaulate to True!",
+                            _currentState.StateType.Name, trigger));
+
+                    // Queue up the transition
+                    GotoState(matchingTrigger.TargetState);
                 }
-
-                // Did we find a matching trigger?
-                if (matchingTrigger == null)
-                    throw new SolidStateException(string.Format(
-                        "State {0}, trigger {1} has no guard clause that evaulate to True!",
-                        _currentState.StateType.Name, trigger));
-
-                // Queue up the transition
-                GotoState(matchingTrigger.TargetState);
             }
         }
 
         // Properties
-
-        /// <summary>
-        /// Indicates if the initial state of the state machine has been configured yet.
-        /// It can only be configured once.
-        /// </summary>
-        internal bool InitialStateConfigured
-        {
-            get { return _initialStateConfigured; }
-        }
 
         /// <summary>
         /// The type that is the initial state.
