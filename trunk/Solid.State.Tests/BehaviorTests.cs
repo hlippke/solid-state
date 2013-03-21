@@ -11,6 +11,12 @@ namespace Solid.State.Tests
     {
         // Methods (IStateResolver)
 
+        /// <summary>
+        /// Implements the IStateResolver interface which is used by
+        /// some of the tests.
+        /// </summary>
+        /// <param name="stateType"></param>
+        /// <returns></returns>
         public ISolidState ResolveState(Type stateType)
         {
             if (stateType == typeof (StateWithoutParameterlessConstructor))
@@ -62,6 +68,9 @@ namespace Solid.State.Tests
             Assert.IsTrue(sm.CurrentState is RingingState);
         }
 
+        /// <summary>
+        /// Tests that an unguarded trigger leads to the correct target state.
+        /// </summary>
         [TestMethod]
         public void OneStepUnguardedTransition()
         {
@@ -73,6 +82,9 @@ namespace Solid.State.Tests
             Assert.IsTrue(sm.CurrentState is DiallingState, "Unexpected current state!");
         }
 
+        /// <summary>
+        /// Tests that the correct target state is selected when the same trigger have different guard clauses.
+        /// </summary>
         [TestMethod]
         public void OneStepGuardedTransition()
         {
@@ -105,11 +117,16 @@ namespace Solid.State.Tests
             isPhoneWorking = true;
 
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
+
             Assert.IsTrue(sm.CurrentState is DiallingState,
                           string.Format("Telephone state is {0}, expected {1}", sm.CurrentState.GetType().Name,
                                         typeof (DiallingState).Name));
         }
 
+        /// <summary>
+        /// Tests that states are correctly instantiated when there is a state resolver present.
+        /// (This class acts as the state resolver).
+        /// </summary>
         [TestMethod]
         public void UsingStateResolver()
         {
@@ -165,6 +182,9 @@ namespace Solid.State.Tests
             Assert.IsTrue(dateTime.CurrentDate.Equals(DateTime.Now.Date), "Wrong date in context!");
         }
 
+        /// <summary>
+        /// Tests that it's OK to configure reentrant states by pointing a transition back to the same state it belongs to.
+        /// </summary>
         [TestMethod]
         public void ConfigurationReentrantState()
         {
@@ -229,7 +249,11 @@ namespace Solid.State.Tests
 
             sm.Trigger(0);
         }
-
+        
+        /// <summary>
+        /// Tests that the invalid trigger handler is called when it has been specified,
+        /// instead of an exception being thrown.
+        /// </summary>
         [TestMethod]
         public void InvalidTriggerWithHandler()
         {

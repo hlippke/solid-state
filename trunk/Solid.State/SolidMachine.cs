@@ -9,7 +9,7 @@ namespace Solid.State
         // Variables
 
         private readonly object _queueLockObject = new object();
-
+        private readonly Dictionary<Type, StateConfiguration> _stateConfigurations;
         private readonly List<Action> _transitionQueue; 
 
         private StateConfiguration _initialState;
@@ -23,7 +23,6 @@ namespace Solid.State
 
         private Action<Type, TTrigger> _invalidTriggerHandler;
 
-        private Dictionary<Type, StateConfiguration> _stateConfigurations;
         private bool _stateResolverRequired;
         private bool _isProcessingQueue;
 
@@ -35,6 +34,13 @@ namespace Solid.State
                 throw new SolidStateException("State machine is not started!");
         }
 
+        /// <summary>
+        /// Performs a transition by exiting the current state and entering
+        /// the next. This method should never be called directly, instead use
+        /// the GotoState method to use the transition queue which will make
+        /// sure that the transitions happens in the correct order.
+        /// </summary>
+        /// <param name="state"></param>
         private void ExecuteTransition(StateConfiguration state)
         {
             Type previousState = null;
@@ -60,6 +66,10 @@ namespace Solid.State
             OnTransitioned(new TransitionedEventArgs(previousState, currentState));
         }
 
+        /// <summary>
+        /// Loops through the transition queue until it is empty, executing the queued
+        /// calls to the ExecuteTransition method.
+        /// </summary>
         private void ProcessTransitionQueue()
         {
             if (_isProcessingQueue)
@@ -112,6 +122,9 @@ namespace Solid.State
             ProcessTransitionQueue();
         }
 
+        /// <summary>
+        /// Sets the initial state of the state machine.
+        /// </summary>
         private void SetInitialState(StateConfiguration initialStateConfiguration)
         {
             _initialState = initialStateConfiguration;
@@ -153,6 +166,10 @@ namespace Solid.State
             return _context ?? this;
         }
 
+        /// <summary>
+        /// Returns a list of all triggers that are valid to use on the current state.
+        /// </summary>
+        /// <returns></returns>
         private List<TTrigger> GetValidTriggers()
         {
             if (!_isStarted || (_currentState == null))
@@ -202,6 +219,11 @@ namespace Solid.State
 
         // Public methods
 
+        /// <summary>
+        /// Defines a state that should be configured.
+        /// </summary>
+        /// <typeparam name="TState"></typeparam>
+        /// <returns></returns>
         public StateConfiguration State<TState>() where TState : ISolidState
         {
             var type = typeof (TState);
@@ -246,9 +268,10 @@ namespace Solid.State
         }
 
         /// <summary>
-        /// 
+        /// Sets the invalid trigger handler that will be called when a trigger is used
+        /// that isn't valid for the current state. If no handler is specified, an
+        /// exception will be thrown.
         /// </summary>
-        /// <param name="invalidTriggerHandler"></param>
         public void OnInvalidTrigger(Action<Type, TTrigger> invalidTriggerHandler)
         {
             _invalidTriggerHandler = invalidTriggerHandler;
@@ -308,16 +331,11 @@ namespace Solid.State
         // Properties
 
         /// <summary>
-        /// The type that is the initial state.
+        /// The type of the machines initial state.
         /// </summary>
-        internal Type InitialState
+        public Type InitialState
         {
             get { return _initialState.StateType; }
-        }
-
-        public Dictionary<Type, StateConfiguration> StateConfigurations
-        {
-            get { return _stateConfigurations; }
         }
 
         /// <summary>
@@ -336,7 +354,7 @@ namespace Solid.State
 
         /// <summary>
         /// A list of the triggers that are valid to use on the current state.
-        /// If the machine has been started, this list is empty.
+        /// If the machine hasn't been started yet, this list is empty.
         /// </summary>
         public List<TTrigger> ValidTriggers
         {

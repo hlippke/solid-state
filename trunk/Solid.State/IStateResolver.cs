@@ -9,6 +9,11 @@ namespace Solid.State
     {
         // Methods
 
+        /// <summary>
+        /// Instantiates a state object the specified type.
+        /// </summary>
+        /// <param name="stateType"></param>
+        /// <returns></returns>
         ISolidState ResolveState(Type stateType);
     }
 }
