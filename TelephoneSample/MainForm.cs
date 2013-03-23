@@ -61,6 +61,9 @@ namespace TelephoneSample
         {
             _sm = new SolidMachine<TelephoneTrigger>(null, this);
 
+            // Uncomment this row if you want a new state instance to be created on each transition
+            // _sm.InstantiateStatePerTransition = true;
+
             _sm.Transitioned += StateMachineOnTransitioned;
 
             _sm.State<IdleState>()

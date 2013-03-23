@@ -25,6 +25,7 @@ namespace Solid.State
 
         private bool _stateResolverRequired;
         private bool _isProcessingQueue;
+        private bool _instantiateStatePerTransition;
 
         // Private methods
 
@@ -141,10 +142,15 @@ namespace Solid.State
         {
             // Do we have a state resolver?
             if (_stateResolver != null)
-                return _stateResolver.ResolveState(stateType);
-
-            // No, use standard .NET activator
-            return (ISolidState) Activator.CreateInstance(stateType);
+            {
+                var instance = _stateResolver.ResolveState(stateType);
+                if (instance == null)
+                    throw new SolidStateException(string.Format("State resolver returned null for type '{0}'!",
+                                                                stateType.Name));
+                return instance;
+            }
+            else
+                return (ISolidState) Activator.CreateInstance(stateType);
         }
 
         /// <summary>
@@ -379,6 +385,16 @@ namespace Solid.State
         {
             get { return _stateResolver; }
             set { _stateResolver = value; }
+        }
+
+        /// <summary>
+        /// Controls whether state class instances should be Singletons or if they should be instantiated
+        /// for each transition. Default value = false.
+        /// </summary>
+        public bool InstantiateStatePerTransition
+        {
+            get { return _instantiateStatePerTransition; }
+            set { _instantiateStatePerTransition = value; }
         }
     }
 }

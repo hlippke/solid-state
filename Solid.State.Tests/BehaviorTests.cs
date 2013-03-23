@@ -278,5 +278,65 @@ namespace Solid.State.Tests
                           string.Format("{0}_{1}", typeof (DiallingState).Name, TelephoneTrigger.PickingUpPhone),
                           string.Format("HandlerCalledMessage not what expected : {0}", _handlerCalledMessage));
         }
+
+        /// <summary>
+        /// Tests that the same state instance is used all the time if the state machine is configured to do so.
+        /// </summary>
+        [TestMethod]
+        public void VerifyStateSingletons()
+        {
+            var sm = new TestStateMachine();
+
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<CountingState>();
+            sm.State<CountingState>()
+                .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
+
+            sm.Start();
+
+            // Goto CountingState
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+            // Go back
+            sm.Trigger(TelephoneTrigger.HangingUp);
+            // Goto CountingState again
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+
+            // The CurrentState should have been freshly created, meaning that CountingState.EnteringSelfCount should be 1
+            Assert.IsTrue(
+                (sm.CurrentState is CountingState) && ((sm.CurrentState as CountingState).EnteringSelfCount == 2),
+                string.Format("Unexpected EnteringSelfCount!"));
+
+        }
+
+        /// <summary>
+        /// Tests that new target state instances are created on each transition if the state machine has been
+        /// configured to do so.
+        /// </summary>
+        [TestMethod]
+        public void InstantiateStatePerTransition()
+        {
+            var sm = new TestStateMachine();
+            sm.InstantiateStatePerTransition = true;
+
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<CountingState>();
+            sm.State<CountingState>()
+                .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
+
+            sm.Start();
+
+            // Goto CountingState
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+            // Go back
+            sm.Trigger(TelephoneTrigger.HangingUp);
+            // Goto CountingState again
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+
+            // The CurrentState should have been freshly created, meaning that CountingState.EnteringSelfCount should be 1
+            Assert.IsTrue(
+                (sm.CurrentState is CountingState) && ((sm.CurrentState as CountingState).EnteringSelfCount == 1),
+                string.Format("Unexpected EnteringSelfCount!"));
+
+        }
     }
 }
