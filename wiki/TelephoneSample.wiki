@@ -9,4 +9,4 @@ The `ValidTriggers` property is used to determine which trigger buttons should b
 
 The state classes uses different parts of the telephone (microphone, speaker, bell) to accomplish their tasks. The telephone parts emulate their behavior by writing to a textlog in the main form.
 
-Nothing fancy, but I hopes the sample application serves its purpose.
+Nothing fancy, but I hopes the sample application serves its purpose of dissplaying how Solid.State can be used.
