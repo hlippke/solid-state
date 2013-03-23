@@ -211,9 +211,11 @@ namespace TelephoneSample
             // 
             // tbLog
             // 
+            this.tbLog.BackColor = System.Drawing.SystemColors.Window;
             this.tbLog.Location = new System.Drawing.Point(13, 340);
             this.tbLog.Multiline = true;
             this.tbLog.Name = "tbLog";
+            this.tbLog.ReadOnly = true;
             this.tbLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.tbLog.Size = new System.Drawing.Size(472, 225);
             this.tbLog.TabIndex = 4;

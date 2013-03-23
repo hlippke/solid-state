@@ -23,23 +23,13 @@ namespace Solid.State
                 return _triggerConfigurations.FirstOrDefault(x => (x.Trigger.Equals(trigger)));
             }
 
-            // Constructor
-
-            public StateConfiguration(Type stateType, SolidMachine<TTrigger> owningMachine)
-            {
-                _stateType = stateType;
-                _owningMachine = owningMachine;
-                _triggerConfigurations = new List<TriggerConfiguration>();
-            }
-
-            // Methods
-
             /// <summary>
             /// Enters a state, creating an instance of it if necessary.
             /// </summary>
-            public void Enter()
+            internal void Enter()
             {
-                if (_stateInstance == null)
+                // Should a new instance be created?
+                if ((_stateInstance == null) || (_owningMachine._instantiateStatePerTransition))
                     _stateInstance = _owningMachine.InstantiateState(_stateType);
 
                 _stateInstance.Entering(_owningMachine.GetContext());
@@ -53,6 +43,17 @@ namespace Solid.State
                 if (_stateInstance != null)
                     _stateInstance.Exiting(_owningMachine.GetContext());
             }
+
+            // Constructor
+
+            public StateConfiguration(Type stateType, SolidMachine<TTrigger> owningMachine)
+            {
+                _stateType = stateType;
+                _owningMachine = owningMachine;
+                _triggerConfigurations = new List<TriggerConfiguration>();
+            }
+
+            // Methods
 
             public StateConfiguration IsInitialState()
             {
