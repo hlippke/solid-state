@@ -1,0 +1,12 @@
+#labels Featured
+The TelephoneSample application is meant to demonstrate how a state machine can be set up with dedicated state classes and a [http://en.wikipedia.org/wiki/Inversion_of_control IoC] container serving up states to enable dependency injection into them.
+
+It is a .NET 4 Windows Forms application.
+
+The main setup action takes place in the `MainForm.cs` file, registering the necessary states and telephone parts in the Autofac container and configuring the state machine.
+
+The `ValidTriggers` property is used to determine which trigger buttons should be enabled for each state.
+
+The state classes uses different parts of the telephone (microphone, speaker, bell) to accomplish their tasks. The telephone parts emulate their behavior by writing to a textlog in the main form.
+
+Nothing fancy, but I hopes the sample application serves its purpose.
