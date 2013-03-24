@@ -29,7 +29,7 @@ namespace Solid.State
             internal void Enter()
             {
                 // Should a new instance be created?
-                if ((_stateInstance == null) || (_owningMachine._instantiateStatePerTransition))
+                if ((_stateInstance == null) || (_owningMachine._stateInstantiationMode == StateInstantiationMode.PerTransition))
                     _stateInstance = _owningMachine.InstantiateState(_stateType);
 
                 _stateInstance.Entering(_owningMachine.GetContext());
