@@ -286,6 +286,7 @@ namespace Solid.State.Tests
         public void VerifyStateSingletons()
         {
             var sm = new TestStateMachine();
+            // No setting of the value here, Singleton should be the default.
 
             sm.State<IdleState>()
                 .On(TelephoneTrigger.PickingUpPhone).GoesTo<CountingState>();
@@ -316,7 +317,7 @@ namespace Solid.State.Tests
         public void InstantiateStatePerTransition()
         {
             var sm = new TestStateMachine();
-            sm.InstantiateStatePerTransition = true;
+            sm.StateInstantiationMode = StateInstantiationMode.PerTransition;
 
             sm.State<IdleState>()
                 .On(TelephoneTrigger.PickingUpPhone).GoesTo<CountingState>();
@@ -336,6 +337,65 @@ namespace Solid.State.Tests
             Assert.IsTrue(
                 (sm.CurrentState is CountingState) && ((sm.CurrentState as CountingState).EnteringSelfCount == 1),
                 string.Format("Unexpected EnteringSelfCount!"));
+
+        }
+
+        /// <summary>
+        /// Tests that states are recorded correctly in the state history in the correct order.
+        /// </summary>
+        [TestMethod]
+        public void StateHistory()
+        {
+            var sm = BuildTelephoneStateMachine();
+
+            // State history should be empty
+            Assert.IsTrue(sm.StateHistory.Length == 0, "State history is not empty!");
+            
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+            sm.Trigger(TelephoneTrigger.DialedNumber);
+            sm.Trigger(TelephoneTrigger.Answered);
+
+            // Assert
+            Assert.IsTrue(sm.StateHistory.Length == 3, "State history doesn't contain 3 items");
+            Assert.IsTrue(sm.StateHistory[0] == typeof(WaitForAnswerState), "Expected WaitForAnswerState at index 0");
+            Assert.IsTrue(sm.StateHistory[1] == typeof(DiallingState), "Expected DiallingState at index 1");
+            Assert.IsTrue(sm.StateHistory[2] == typeof (IdleState), "Expected IdleState at index 2");
+        }
+
+        /// <summary>
+        /// Tests that the GoBack method works, even when guard clauses has caused the
+        /// state machine to transition to different states from a specific source state.
+        /// </summary>
+        [TestMethod]
+        public void GoBack()
+        {
+            var sm = new SolidMachine<TelephoneTrigger>();
+
+            var isGoingToDialling = false;
+
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<DiallingState>();
+
+            sm.State<DiallingState>()
+                .On(TelephoneTrigger.Answered, () => isGoingToDialling).GoesTo<ConversationState>()
+                .On(TelephoneTrigger.Answered, () => !isGoingToDialling).GoesTo<WaitForAnswerState>();
+
+            sm.Start();
+
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+            sm.Trigger(TelephoneTrigger.Answered);
+
+            Assert.IsTrue(sm.CurrentState is WaitForAnswerState, "Expected state WaitForAnswerState");
+            sm.GoBack();
+            Assert.IsTrue(sm.CurrentState is DiallingState, "Expected state DiallingState");
+            
+            // Shift the track
+            isGoingToDialling = true;
+            sm.Trigger(TelephoneTrigger.Answered);
+
+            Assert.IsTrue(sm.CurrentState is ConversationState, "Expected state ConversationState");
+            sm.GoBack();
+            Assert.IsTrue(sm.CurrentState is DiallingState, "Expected state DiallingState... again");
 
         }
     }

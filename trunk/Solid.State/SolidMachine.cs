@@ -9,8 +9,11 @@ namespace Solid.State
         // Variables
 
         private readonly object _queueLockObject = new object();
+        private readonly object _stateHistoryLockObject = new object();
+
         private readonly Dictionary<Type, StateConfiguration> _stateConfigurations;
-        private readonly List<Action> _transitionQueue; 
+        private readonly List<Action> _transitionQueue;
+        private readonly List<StateConfiguration> _stateHistory;
 
         private StateConfiguration _initialState;
         private StateConfiguration _currentState;
@@ -25,7 +28,7 @@ namespace Solid.State
 
         private bool _stateResolverRequired;
         private bool _isProcessingQueue;
-        private bool _instantiateStatePerTransition;
+        private StateInstantiationMode _stateInstantiationMode;
 
         // Private methods
 
@@ -52,6 +55,10 @@ namespace Solid.State
             {
                 previousState = _currentState.StateType;
                 _currentState.Exit();
+
+                // Record it in the history
+                lock (_stateHistoryLockObject)
+                    _stateHistory.Insert(0, _currentState);
             }
 
             _currentState = state;
@@ -203,6 +210,7 @@ namespace Solid.State
         {
             _stateConfigurations = new Dictionary<Type, StateConfiguration>();
             _transitionQueue = new List<Action>();
+            _stateHistory = new List<StateConfiguration>();
         }
 
         public SolidMachine(object context) : this()
@@ -334,6 +342,22 @@ namespace Solid.State
             }
         }
 
+        /// <summary>
+        /// Moves the state machine back to the previous state, ignoring valid triggers, guard clauses etc.
+        /// </summary>
+        public void GoBack()
+        {
+            // If the history is empty, we just ignore the call
+            if (_stateHistory.Count == 0)
+                return;
+
+            lock(_stateHistoryLockObject)
+            {
+                GotoState(_stateHistory[0]);
+                _stateHistory.RemoveAt(0);
+            }
+        }
+
         // Properties
 
         /// <summary>
@@ -389,12 +413,42 @@ namespace Solid.State
 
         /// <summary>
         /// Controls whether state class instances should be Singletons or if they should be instantiated
-        /// for each transition. Default value = false.
+        /// for each transition. Default value is Singleton.
         /// </summary>
-        public bool InstantiateStatePerTransition
+        public StateInstantiationMode StateInstantiationMode
         {
-            get { return _instantiateStatePerTransition; }
-            set { _instantiateStatePerTransition = value; }
+            get { return _stateInstantiationMode; }
+            set { _stateInstantiationMode = value; }
         }
+
+        /// <summary>
+        /// Returns an array of the states the state machine has been in. The last state is at index 0.
+        /// The current state is not part of the list.
+        /// </summary>
+        public Type[] StateHistory
+        {
+            get
+            {
+                lock (_stateHistoryLockObject)
+                    return _stateHistory.Select(x => x.StateType).ToArray();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Enumeration of possible state instantiation modes.
+    /// </summary>
+    public enum StateInstantiationMode
+    {
+        /// <summary>
+        /// The state class is instantiated the first time it is used. All following
+        /// transitions into that state will use the same instance.
+        /// </summary>
+        Singleton,
+
+        /// <summary>
+        /// The target state of a transition is instantiated on each transition.
+        /// </summary>
+        PerTransition
     }
 }
