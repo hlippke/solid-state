@@ -369,16 +369,23 @@ namespace Solid.State
         /// </summary>
         public void GoBack()
         {
-            // If the history is empty, we just ignore the call
-            if (_stateHistory.Count == 0)
-                return;
+            StateConfiguration targetState;
+            Type previousStateType;
 
-            lock(_stateHistoryLockObject)
+            lock (_stateHistoryLockObject)
             {
-                var previousStateType = ExitCurrentState(addToHistory: false);
-                EnterNewState(previousStateType, _stateHistory[0]);
+                // If the history is empty, we just ignore the call
+                if (_stateHistory.Count == 0)
+                    return;
+
+                previousStateType = ExitCurrentState(addToHistory: false);
+
+                targetState = _stateHistory[0];
                 _stateHistory.RemoveAt(0);
             }
+
+            if (targetState != null)
+                EnterNewState(previousStateType, targetState);
         }
 
         // Properties

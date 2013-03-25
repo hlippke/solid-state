@@ -1,15 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
-
-namespace WizardSample.Pages
+﻿namespace WizardSample.Pages
 {
-    public partial class WorkInfoPage : WizardSample.Pages.BasePage
+    public partial class WorkInfoPage : BasePage
     {
+        // Protected methods
+
+        protected override void DoEntering(WizardContext context)
+        {
+            // Select the correct item in the combobox
+            var index = comboKindOfWork.Items.IndexOf(context.KindOfWork ?? "");
+            if (index < 0)
+                index = 0;
+
+            comboKindOfWork.SelectedIndex = index;
+        }
+
+        protected override void DoExiting(WizardContext context)
+        {
+            // Save the selected value
+            context.KindOfWork = comboKindOfWork.Text;
+        }
+
+        // Constructor
+
         public WorkInfoPage()
         {
             InitializeComponent();

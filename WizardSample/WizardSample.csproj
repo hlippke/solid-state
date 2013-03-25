@@ -62,11 +62,29 @@
     <Compile Include="Pages\FamilyInfoPage1.Designer.cs">
       <DependentUpon>FamilyInfoPage1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Pages\FamilyInfoPage2.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\FamilyInfoPage2.Designer.cs">
+      <DependentUpon>FamilyInfoPage2.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\FinishPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\FinishPage.Designer.cs">
+      <DependentUpon>FinishPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="Pages\HomeInfoPage1.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Pages\HomeInfoPage1.Designer.cs">
       <DependentUpon>HomeInfoPage1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\HomeInfoPage2.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\HomeInfoPage2.Designer.cs">
+      <DependentUpon>HomeInfoPage2.cs</DependentUpon>
     </Compile>
     <Compile Include="Pages\InfoSelectionPage.cs">
       <SubType>UserControl</SubType>
@@ -88,6 +106,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="States\ShutdownApplicationState.cs" />
     <Compile Include="WizardContext.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
@@ -95,11 +114,20 @@
     <EmbeddedResource Include="Pages\BasePage.resx">
       <DependentUpon>BasePage.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Pages\FamilyInfoPage1.resx">
+      <DependentUpon>FamilyInfoPage1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\FinishPage.resx">
+      <DependentUpon>FinishPage.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Pages\InfoSelectionPage.resx">
       <DependentUpon>InfoSelectionPage.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Pages\WelcomePage.resx">
       <DependentUpon>WelcomePage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\WorkInfoPage.resx">
+      <DependentUpon>WorkInfoPage.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
