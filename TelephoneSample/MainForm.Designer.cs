@@ -236,7 +236,7 @@ namespace TelephoneSample
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "solid-state telephone sample";
+            this.Text = "Solid.State telephone sample";
             this.gboxTriggers.ResumeLayout(false);
             this.gboxConditions.ResumeLayout(false);
             this.gboxConditions.PerformLayout();
