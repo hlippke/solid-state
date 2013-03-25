@@ -74,18 +74,6 @@
     <Compile Include="Pages\FinishPage.Designer.cs">
       <DependentUpon>FinishPage.cs</DependentUpon>
     </Compile>
-    <Compile Include="Pages\HomeInfoPage1.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pages\HomeInfoPage1.Designer.cs">
-      <DependentUpon>HomeInfoPage1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\HomeInfoPage2.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Pages\HomeInfoPage2.Designer.cs">
-      <DependentUpon>HomeInfoPage2.cs</DependentUpon>
-    </Compile>
     <Compile Include="Pages\InfoSelectionPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -116,6 +104,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Pages\FamilyInfoPage1.resx">
       <DependentUpon>FamilyInfoPage1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\FamilyInfoPage2.resx">
+      <DependentUpon>FamilyInfoPage2.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Pages\FinishPage.resx">
       <DependentUpon>FinishPage.cs</DependentUpon>

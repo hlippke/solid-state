@@ -41,7 +41,6 @@ namespace WizardSample
     public enum InfoSelectionMode
     {
         Family = 0,
-        Home = 1,
-        Work = 2
+        Work = 1
     }
 }

@@ -117,11 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="lblInfo.Text" xml:space="preserve">
-    <value>This is a wizard that lets you provide a little info about yourself. Depending on choices you make on the early pages of the wizard, different pages are shown later on.
-
-By using the GoBack method on the SolidMachine class, transitions for going back doesn't need to be explicitly configured.
-
-NOTE! The info you enter are not stored and/or sent anywhere, it is just intended to mimic a real, serious, important wizard.</value>
-  </data>
 </root>

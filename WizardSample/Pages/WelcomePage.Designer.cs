@@ -47,7 +47,7 @@
             // 
             this.lblInfo.Location = new System.Drawing.Point(4, 31);
             this.lblInfo.Name = "lblInfo";
-            this.lblInfo.Size = new System.Drawing.Size(359, 117);
+            this.lblInfo.Size = new System.Drawing.Size(359, 182);
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = resources.GetString("lblInfo.Text");
             // 

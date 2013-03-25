@@ -20,11 +20,7 @@ namespace WizardSample.Pages
                 sb.AppendLine(string.Format("Your family consists of {0} adults and {1} children", context.AdultCount,
                                             context.ChildCount));
                 if (!string.IsNullOrEmpty(context.FamilyPet))
-                    sb.AppendLine(string.Format("You also have {0}", context.FamilyPet));
-            }
-            else if (context.InfoSelection == InfoSelectionMode.Home)
-            {
-                sb.AppendLine(string.Format("You live in {0} and your zip code is {1}", context.HomeType, context.Zipcode));
+                    sb.AppendLine(string.Format("You also have: {0}", context.FamilyPet));
             }
 
             tbSummary.Text = sb.ToString();
