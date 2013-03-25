@@ -31,6 +31,11 @@ namespace WizardSample
             _sm.State<WelcomePage>()
                 .On(WizardTrigger.Next).GoesTo<InfoSelectionPage>();
 
+            _sm.State<InfoSelectionPage>()
+                .On(WizardTrigger.Next, () => _wizardContext.InfoSelection == InfoSelectionMode.Family).GoesTo<FamilyInfoPage1>()
+                .On(WizardTrigger.Next, () => _wizardContext.InfoSelection == InfoSelectionMode.Home).GoesTo<HomeInfoPage1>()
+                .On(WizardTrigger.Next, () => _wizardContext.InfoSelection == InfoSelectionMode.Work).GoesTo<WorkInfoPage>();
+
             _sm.Start();
 
         }
