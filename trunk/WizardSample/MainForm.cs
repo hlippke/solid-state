@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using Solid.State;
 using WizardSample.Pages;
+using WizardSample.States;
 
 namespace WizardSample
 {
@@ -28,13 +29,34 @@ namespace WizardSample
             _sm = new SolidMachine<WizardTrigger>(_wizardContext);
             _sm.Transitioned += StateMachineOnTransitioned;
 
+            // Assign the state machine to the context so it's accessible
+            _wizardContext.StateMachine = _sm;
+
             _sm.State<WelcomePage>()
+                .On(WizardTrigger.Cancel).GoesTo<ShutdownApplicationState>()
                 .On(WizardTrigger.Next).GoesTo<InfoSelectionPage>();
 
             _sm.State<InfoSelectionPage>()
+                .On(WizardTrigger.Cancel).GoesTo<ShutdownApplicationState>()
                 .On(WizardTrigger.Next, () => _wizardContext.InfoSelection == InfoSelectionMode.Family).GoesTo<FamilyInfoPage1>()
                 .On(WizardTrigger.Next, () => _wizardContext.InfoSelection == InfoSelectionMode.Home).GoesTo<HomeInfoPage1>()
                 .On(WizardTrigger.Next, () => _wizardContext.InfoSelection == InfoSelectionMode.Work).GoesTo<WorkInfoPage>();
+
+            _sm.State<FamilyInfoPage1>()
+                .On(WizardTrigger.Next).GoesTo<FamilyInfoPage2>();
+            _sm.State<FamilyInfoPage2>()
+                .On(WizardTrigger.Next).GoesTo<FinishPage>();
+
+            _sm.State<HomeInfoPage1>()
+                .On(WizardTrigger.Next).GoesTo<HomeInfoPage2>();
+            _sm.State<HomeInfoPage2>()
+                .On(WizardTrigger.Next).GoesTo<FinishPage>();
+
+            _sm.State<WorkInfoPage>()
+                .On(WizardTrigger.Next).GoesTo<FinishPage>();
+
+            _sm.State<FinishPage>()
+                .On(WizardTrigger.Finish).GoesTo<ShutdownApplicationState>();
 
             _sm.Start();
 
@@ -105,7 +127,11 @@ namespace WizardSample
         {
             // Determine what trigger is the correct one
             if (_sm.ValidTriggers.Contains(WizardTrigger.Cancel))
-                _sm.Trigger(WizardTrigger.Cancel);
+            {
+                // Confirm the we should indeed cancel
+                if (MessageBox.Show(Program.MainForm, "Are you sure you want to cancel?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    _sm.Trigger(WizardTrigger.Cancel);
+            }
             else
                 _sm.Trigger(WizardTrigger.Finish);
         }
@@ -136,6 +162,7 @@ namespace WizardSample
         Back,
         Next,
         Cancel,
+        CancelConfirmed,
         Finish
     }
 }

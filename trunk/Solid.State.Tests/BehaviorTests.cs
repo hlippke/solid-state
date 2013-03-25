@@ -387,7 +387,8 @@ namespace Solid.State.Tests
 
             Assert.IsTrue(sm.CurrentState is WaitForAnswerState, "Expected state WaitForAnswerState");
             sm.GoBack();
-            Assert.IsTrue(sm.CurrentState is DiallingState, "Expected state DiallingState");
+            Assert.IsTrue(sm.CurrentState is DiallingState,
+                          string.Format("Expected state DiallingState, was {0}", sm.CurrentState.GetType().Name));
             
             // Shift the track
             isGoingToDialling = true;
