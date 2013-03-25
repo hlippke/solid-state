@@ -41,7 +41,13 @@ namespace Solid.State
             internal void Exit()
             {
                 if (_stateInstance != null)
+                {
                     _stateInstance.Exiting(_owningMachine.GetContext());
+
+                    // If we're instantiating per transition, we release the reference to the instance
+                    if (_owningMachine._stateInstantiationMode == StateInstantiationMode.PerTransition)
+                        _stateInstance = null;
+                }
             }
 
             // Constructor
