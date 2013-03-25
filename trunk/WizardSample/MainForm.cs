@@ -39,20 +39,17 @@ namespace WizardSample
             _sm.State<InfoSelectionPage>()
                 .On(WizardTrigger.Cancel).GoesTo<ShutdownApplicationState>()
                 .On(WizardTrigger.Next, () => _wizardContext.InfoSelection == InfoSelectionMode.Family).GoesTo<FamilyInfoPage1>()
-                .On(WizardTrigger.Next, () => _wizardContext.InfoSelection == InfoSelectionMode.Home).GoesTo<HomeInfoPage1>()
                 .On(WizardTrigger.Next, () => _wizardContext.InfoSelection == InfoSelectionMode.Work).GoesTo<WorkInfoPage>();
 
             _sm.State<FamilyInfoPage1>()
+                .On(WizardTrigger.Cancel).GoesTo<ShutdownApplicationState>()
                 .On(WizardTrigger.Next).GoesTo<FamilyInfoPage2>();
             _sm.State<FamilyInfoPage2>()
-                .On(WizardTrigger.Next).GoesTo<FinishPage>();
-
-            _sm.State<HomeInfoPage1>()
-                .On(WizardTrigger.Next).GoesTo<HomeInfoPage2>();
-            _sm.State<HomeInfoPage2>()
+                .On(WizardTrigger.Cancel).GoesTo<ShutdownApplicationState>()
                 .On(WizardTrigger.Next).GoesTo<FinishPage>();
 
             _sm.State<WorkInfoPage>()
+                .On(WizardTrigger.Cancel).GoesTo<ShutdownApplicationState>()
                 .On(WizardTrigger.Next).GoesTo<FinishPage>();
 
             _sm.State<FinishPage>()

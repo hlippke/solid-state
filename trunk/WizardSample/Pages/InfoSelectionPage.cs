@@ -15,7 +15,6 @@
         {
             // Read from context which radio button should be selected
             radioFamily.Checked = context.InfoSelection == InfoSelectionMode.Family;
-            radioHome.Checked = context.InfoSelection == InfoSelectionMode.Home;
             radioWork.Checked = context.InfoSelection == InfoSelectionMode.Work;
         }
 
@@ -25,8 +24,6 @@
             // clauses when selecting the next page
             if (radioFamily.Checked)
                 context.InfoSelection = InfoSelectionMode.Family;
-            else if (radioHome.Checked)
-                context.InfoSelection = InfoSelectionMode.Home;
             else
                 context.InfoSelection = InfoSelectionMode.Work;
         }
