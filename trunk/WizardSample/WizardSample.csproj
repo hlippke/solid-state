@@ -56,6 +56,18 @@
     <Compile Include="Pages\BasePage.Designer.cs">
       <DependentUpon>BasePage.cs</DependentUpon>
     </Compile>
+    <Compile Include="Pages\FamilyInfoPage1.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\FamilyInfoPage1.Designer.cs">
+      <DependentUpon>FamilyInfoPage1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\HomeInfoPage1.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\HomeInfoPage1.Designer.cs">
+      <DependentUpon>HomeInfoPage1.cs</DependentUpon>
+    </Compile>
     <Compile Include="Pages\InfoSelectionPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -67,6 +79,12 @@
     </Compile>
     <Compile Include="Pages\WelcomePage.Designer.cs">
       <DependentUpon>WelcomePage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\WorkInfoPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\WorkInfoPage.Designer.cs">
+      <DependentUpon>WorkInfoPage.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

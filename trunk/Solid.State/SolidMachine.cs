@@ -39,39 +39,23 @@ namespace Solid.State
         }
 
         /// <summary>
-        /// Performs a transition by exiting the current state and entering
-        /// the next. This method should never be called directly, instead use
-        /// the GotoState method to use the transition queue which will make
-        /// sure that the transitions happens in the correct order.
+        /// Enters a new state (if there is one) and raises the OnTransitioned event.
         /// </summary>
-        /// <param name="state"></param>
-        private void ExecuteTransition(StateConfiguration state)
+        private void EnterNewState(Type previousStateType, StateConfiguration state)
         {
-            Type previousState = null;
-            Type currentState = null;
-
-            // Are we leaving a state?
-            if (_currentState != null)
-            {
-                previousState = _currentState.StateType;
-                _currentState.Exit();
-
-                // Record it in the history
-                lock (_stateHistoryLockObject)
-                    _stateHistory.Insert(0, _currentState);
-            }
-
             _currentState = state;
+
+            Type currentStateType = null;
 
             // Are we entering a new state?
             if (_currentState != null)
             {
-                currentState = _currentState.StateType;
+                currentStateType = _currentState.StateType;
                 _currentState.Enter();
             }
 
             // Raise an event about the transition
-            OnTransitioned(new TransitionedEventArgs(previousState, currentState));
+            OnTransitioned(new TransitionedEventArgs(previousStateType, currentStateType));
         }
 
         /// <summary>
@@ -115,20 +99,17 @@ namespace Solid.State
         /// Queues up a transition to a new state.
         /// </summary>
         /// <param name="state"></param>
-        private void GotoState(StateConfiguration state)
-        {
-            // Add to queue
-            var processQueueNeeded = false;
+        //private void GotoState(StateConfiguration state)
+        //{
+        //    lock (_queueLockObject)
+        //    {
+        //        var localState = state;
+        //        _transitionQueue.Add(() => ExecuteTransition(localState));
+        //    }
 
-            lock (_queueLockObject)
-            {
-                var localState = state;
-                _transitionQueue.Add(() => ExecuteTransition(localState));
-            }
-
-            // Do we need to process the queue? Do it outside lock
-            ProcessTransitionQueue();
-        }
+        //    // Do we need to process the queue? Do it outside lock
+        //    ProcessTransitionQueue();
+        //}
 
         /// <summary>
         /// Sets the initial state of the state machine.
@@ -277,8 +258,8 @@ namespace Solid.State
 
             _isStarted = true;
 
-            // Transition to initial state
-            GotoState(_initialState);
+            // Enter the initial state
+            EnterNewState(null, _initialState);
         }
 
         /// <summary>
@@ -292,14 +273,17 @@ namespace Solid.State
         }
 
         /// <summary>
-        /// Notifies the state machine that a transition should be triggered.
+        /// Handles the processing of a trigger, calculating if it is valid and which target state we should go to.
         /// </summary>
         /// <param name="trigger"></param>
-        public void Trigger(TTrigger trigger)
+        private void DoTrigger(TTrigger trigger)
         {
             HandleMachineStarted();
 
+            // Find all trigger configurations with a matching trigger
             var triggers = _currentState.TriggerConfigurations.Where(x => x.Trigger.Equals(trigger)).ToList();
+            
+            // No trigger configs found?
             if (triggers.Count == 0)
             {
                 // Do we have a handler for the situation?
@@ -313,11 +297,16 @@ namespace Solid.State
             {
                 // Is it a single, unguarded trigger?
                 if (triggers[0].GuardClause == null)
-                    GotoState(triggers[0].TargetState);
+                {
+                    var previousStateType = ExitCurrentState(addToHistory: true);
+                    EnterNewState(previousStateType, triggers[0].TargetState);
+                }
                 else
                 {
+                    // First exit the current state, it may affect the evaluation of the guard clauses
+                    var previousStateType = ExitCurrentState(addToHistory: true);
+                    
                     TriggerConfiguration matchingTrigger = null;
-
                     foreach (var tr in triggers)
                     {
                         if (tr.GuardClause())
@@ -337,9 +326,42 @@ namespace Solid.State
                             _currentState.StateType.Name, trigger));
 
                     // Queue up the transition
-                    GotoState(matchingTrigger.TargetState);
+                    EnterNewState(previousStateType, matchingTrigger.TargetState);
                 }
             }
+        }
+
+        /// <summary>
+        /// Exits the current state and returns the Type of it.
+        /// </summary>
+        /// <returns></returns>
+        private Type ExitCurrentState(bool addToHistory)
+        {
+            if (_currentState == null)
+                return null;
+            else
+            {
+                _currentState.Exit();
+
+                // Record it in the history
+                if (addToHistory)
+                    lock (_stateHistoryLockObject)
+                        _stateHistory.Insert(0, _currentState);
+
+                return _currentState.StateType;
+            }
+        }
+
+        public void Trigger(TTrigger trigger)
+        {
+            // Queue it up
+            lock (_queueLockObject)
+            {
+                var localTrigger = trigger;
+                _transitionQueue.Add(() => DoTrigger(localTrigger));
+            }
+
+            ProcessTransitionQueue();
         }
 
         /// <summary>
@@ -353,7 +375,8 @@ namespace Solid.State
 
             lock(_stateHistoryLockObject)
             {
-                GotoState(_stateHistory[0]);
+                var previousStateType = ExitCurrentState(addToHistory: false);
+                EnterNewState(previousStateType, _stateHistory[0]);
                 _stateHistory.RemoveAt(0);
             }
         }
