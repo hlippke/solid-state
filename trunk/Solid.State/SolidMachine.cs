@@ -8,6 +8,9 @@ namespace Solid.State
     {
         // Variables
 
+        private const int DEFAULT_STATEHISTORY_TRIM_THRESHOLD = 100;
+        private const int MIN_STATEHISTORY_TRIM_THRESHOLD = 10;
+
         private readonly object _queueLockObject = new object();
         private readonly object _stateHistoryLockObject = new object();
 
@@ -28,7 +31,10 @@ namespace Solid.State
 
         private bool _stateResolverRequired;
         private bool _isProcessingQueue;
+        
         private StateInstantiationMode _stateInstantiationMode;
+        private int _stateHistoryTrimThreshold;
+        private const double STATEHISTORY_TRIM_PERCENTAGE = 0.1; // Trim 10% of state history
 
         // Private methods
 
@@ -192,6 +198,8 @@ namespace Solid.State
             _stateConfigurations = new Dictionary<Type, StateConfiguration>();
             _transitionQueue = new List<Action>();
             _stateHistory = new List<StateConfiguration>();
+
+            _stateHistoryTrimThreshold = DEFAULT_STATEHISTORY_TRIM_THRESHOLD;
         }
 
         public SolidMachine(object context) : this()
@@ -366,10 +374,26 @@ namespace Solid.State
 
                 // Record it in the history
                 if (addToHistory)
-                    lock (_stateHistoryLockObject)
-                        _stateHistory.Insert(0, _currentState);
+                    AddStateToHistory(_currentState);
 
                 return _currentState.StateType;
+            }
+        }
+
+        private void AddStateToHistory(StateConfiguration state)
+        {
+            lock (_stateHistoryLockObject)
+            {
+                if (state != null)
+                    _stateHistory.Insert(0, state);
+                
+                // Time to trim it?
+                if (_stateHistory.Count > _stateHistoryTrimThreshold)
+                {
+                    var trimValue = (int) (_stateHistoryTrimThreshold*(1.0 - STATEHISTORY_TRIM_PERCENTAGE));
+                    while (_stateHistory.Count > trimValue)
+                        _stateHistory.RemoveAt(trimValue);
+                }
             }
         }
 
@@ -482,6 +506,26 @@ namespace Solid.State
             {
                 lock (_stateHistoryLockObject)
                     return _stateHistory.Select(x => x.StateType).ToArray();
+            }
+        }
+
+        /// <summary>
+        /// The number of entries that will be kept in the state history before an automatic
+        /// trim is performed.
+        /// </summary>
+        public int StateHistoryTrimThreshold
+        {
+            get { return _stateHistoryTrimThreshold; }
+            set
+            {
+                // Can't set a too low value
+                if (value < MIN_STATEHISTORY_TRIM_THRESHOLD)
+                    value = MIN_STATEHISTORY_TRIM_THRESHOLD;
+
+                _stateHistoryTrimThreshold = value;
+                
+                // If the new value is lower we may need a trim right away
+                AddStateToHistory(null);
             }
         }
     }

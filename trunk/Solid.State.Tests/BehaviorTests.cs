@@ -426,5 +426,39 @@ namespace Solid.State.Tests
 
             Assert.IsTrue((sm.EnteringCount == 2) && (sm.ExitingCount == 2), "Unexpected EnteringCount / ExitingCount on Stop!");
         }
+
+        /// <summary>
+        /// Tests that the state history is trimmed automatically so it doesn't grow indefinitely
+        /// </summary>
+        [TestMethod]
+        public void StateHistoryTrim()
+        {
+            var sm = new TestStateMachine();
+
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<CountingState>();
+            sm.State<CountingState>()
+                .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
+
+            sm.Start();
+
+            // Transition a lot of times
+            for (int a = 0;a<1000;a++)
+            {
+                sm.Trigger(TelephoneTrigger.PickingUpPhone);
+                sm.Trigger(TelephoneTrigger.HangingUp);
+            }
+
+            // The state history should be 90-100 items
+            Assert.IsTrue((sm.StateHistory.Length >= 90) && (sm.StateHistory.Length <= 100),
+                          string.Format("{0} states in history", sm.StateHistory.Length));
+
+            sm.StateHistoryTrimThreshold = 50;
+
+            // The state history should be 45-50 items
+            Assert.IsTrue((sm.StateHistory.Length >= 45) && (sm.StateHistory.Length <= 50),
+                          string.Format("{0} states in history", sm.StateHistory.Length));
+
+        }
     }
 }
