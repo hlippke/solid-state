@@ -173,9 +173,9 @@ namespace TelephoneSample
             this.checkIsLineBusy.AutoSize = true;
             this.checkIsLineBusy.Location = new System.Drawing.Point(14, 27);
             this.checkIsLineBusy.Name = "checkIsLineBusy";
-            this.checkIsLineBusy.Size = new System.Drawing.Size(104, 23);
+            this.checkIsLineBusy.Size = new System.Drawing.Size(142, 23);
             this.checkIsLineBusy.TabIndex = 0;
-            this.checkIsLineBusy.Text = "Line is busy";
+            this.checkIsLineBusy.Text = "Other end is busy";
             this.checkIsLineBusy.UseVisualStyleBackColor = true;
             // 
             // pictureBox1

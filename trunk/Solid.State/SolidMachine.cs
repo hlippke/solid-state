@@ -38,10 +38,23 @@ namespace Solid.State
 
         // Private methods
 
-        private void HandleMachineStarted()
+        /// <summary>
+        /// Throws an exception if the state machine hasn't been started yet.
+        /// </summary>
+        private void ThrowOnNotStarted()
         {
             if (!_isStarted)
                 throw new SolidStateException("State machine is not started!");
+        }
+
+        /// <summary>
+        /// Throws an exception with a specified message if the state machine is started.
+        /// </summary>
+        /// <param name="message"></param>
+        private void ThrowOnStarted(string message)
+        {
+            if (_isStarted)
+                throw new SolidStateException(message);
         }
 
         /// <summary>
@@ -62,6 +75,102 @@ namespace Solid.State
 
             // Raise an event about the transition
             OnTransitioned(new TransitionedEventArgs(previousStateType, currentStateType));
+        }
+
+        /// <summary>
+        /// Exits the current state and returns the Type of it.
+        /// </summary>
+        /// <returns></returns>
+        private Type ExitCurrentState(bool addToHistory)
+        {
+            if (_currentState == null)
+                return null;
+            else
+            {
+                _currentState.Exit();
+
+                // Record it in the history
+                if (addToHistory)
+                    AddStateToHistory(_currentState);
+
+                var stateType = _currentState.StateType;
+                _currentState = null;
+                return stateType;
+            }
+        }
+
+        /// <summary>
+        /// Handles the processing of a trigger, calculating if it is valid and which target state we should go to.
+        /// </summary>
+        /// <param name="trigger"></param>
+        private void DoTrigger(TTrigger trigger)
+        {
+            // Find all trigger configurations with a matching trigger
+            var triggers = _currentState.TriggerConfigurations.Where(x => x.Trigger.Equals(trigger)).ToList();
+
+            // No trigger configs found?
+            if (triggers.Count == 0)
+            {
+                // Do we have a handler for the situation?
+                if (_invalidTriggerHandler == null)
+                    throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!", trigger,
+                                                            _currentState.StateType.Name));
+                // Let the handler decide what to do
+                _invalidTriggerHandler(_currentState.StateType, trigger);
+            }
+            else
+            {
+                // Is it a single, unguarded trigger?
+                if (triggers[0].GuardClause == null)
+                {
+                    var previousStateType = ExitCurrentState(addToHistory: true);
+                    EnterNewState(previousStateType, triggers[0].TargetState);
+                }
+                else
+                {
+                    // First exit the current state, it may affect the evaluation of the guard clauses
+                    var previousStateType = ExitCurrentState(addToHistory: true);
+
+                    TriggerConfiguration matchingTrigger = null;
+                    foreach (var tr in triggers)
+                    {
+                        if (tr.GuardClause())
+                        {
+                            if (matchingTrigger != null)
+                                throw new SolidStateException(string.Format(
+                                    "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
+                                    previousStateType.Name, trigger));
+                            matchingTrigger = tr;
+                        }
+                    }
+
+                    // Did we find a matching trigger?
+                    if (matchingTrigger == null)
+                        throw new SolidStateException(string.Format(
+                            "State {0}, trigger {1} has no guard clause that evaulate to True!",
+                            previousStateType.Name, trigger));
+
+                    // Queue up the transition
+                    EnterNewState(previousStateType, matchingTrigger.TargetState);
+                }
+            }
+        }
+
+        private void AddStateToHistory(StateConfiguration state)
+        {
+            lock (_stateHistoryLockObject)
+            {
+                if (state != null)
+                    _stateHistory.Insert(0, state);
+
+                // Time to trim it?
+                if (_stateHistory.Count > _stateHistoryTrimThreshold)
+                {
+                    var trimValue = (int)(_stateHistoryTrimThreshold * (1.0 - STATEHISTORY_TRIM_PERCENTAGE));
+                    while (_stateHistory.Count > trimValue)
+                        _stateHistory.RemoveAt(trimValue);
+                }
+            }
         }
 
         /// <summary>
@@ -100,22 +209,6 @@ namespace Solid.State
                 _isProcessingQueue = false;
             }
         }
-
-        /// <summary>
-        /// Queues up a transition to a new state.
-        /// </summary>
-        /// <param name="state"></param>
-        //private void GotoState(StateConfiguration state)
-        //{
-        //    lock (_queueLockObject)
-        //    {
-        //        var localState = state;
-        //        _transitionQueue.Add(() => ExecuteTransition(localState));
-        //    }
-
-        //    // Do we need to process the queue? Do it outside lock
-        //    ProcessTransitionQueue();
-        //}
 
         /// <summary>
         /// Sets the initial state of the state machine.
@@ -191,7 +284,7 @@ namespace Solid.State
                 Transitioned(this, eventArgs);
         }
 
-        // Constructor
+        // Constructors
 
         public SolidMachine()
         {
@@ -275,12 +368,16 @@ namespace Solid.State
         /// </summary>
         public void Stop()
         {
-            // Ignore this call if the machine hasn't been started yet.
+            // Ignore this call if the machine hasn't been started yet
             if (!_isStarted)
                 return;
 
             try
             {
+                // Empty the queue
+                lock (_queueLockObject)
+                    _transitionQueue.Clear();
+
                 // Exit the current state and raise an event about it
                 var previousStateType = ExitCurrentState(false);
                 OnTransitioned(new TransitionedEventArgs(previousStateType, null));
@@ -302,103 +399,13 @@ namespace Solid.State
         }
 
         /// <summary>
-        /// Handles the processing of a trigger, calculating if it is valid and which target state we should go to.
+        /// Adds a request to fire a trigger to the processing queue.
         /// </summary>
         /// <param name="trigger"></param>
-        private void DoTrigger(TTrigger trigger)
-        {
-            HandleMachineStarted();
-
-            // Find all trigger configurations with a matching trigger
-            var triggers = _currentState.TriggerConfigurations.Where(x => x.Trigger.Equals(trigger)).ToList();
-            
-            // No trigger configs found?
-            if (triggers.Count == 0)
-            {
-                // Do we have a handler for the situation?
-                if (_invalidTriggerHandler == null)
-                    throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!", trigger,
-                                                            _currentState.StateType.Name));
-                // Let the handler decide what to do
-                _invalidTriggerHandler(_currentState.StateType, trigger);
-            }
-            else
-            {
-                // Is it a single, unguarded trigger?
-                if (triggers[0].GuardClause == null)
-                {
-                    var previousStateType = ExitCurrentState(addToHistory: true);
-                    EnterNewState(previousStateType, triggers[0].TargetState);
-                }
-                else
-                {
-                    // First exit the current state, it may affect the evaluation of the guard clauses
-                    var previousStateType = ExitCurrentState(addToHistory: true);
-                    
-                    TriggerConfiguration matchingTrigger = null;
-                    foreach (var tr in triggers)
-                    {
-                        if (tr.GuardClause())
-                        {
-                            if (matchingTrigger != null)
-                                throw new SolidStateException(string.Format(
-                                    "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
-                                    _currentState.StateType.Name, trigger));
-                            matchingTrigger = tr;
-                        }
-                    }
-
-                    // Did we find a matching trigger?
-                    if (matchingTrigger == null)
-                        throw new SolidStateException(string.Format(
-                            "State {0}, trigger {1} has no guard clause that evaulate to True!",
-                            _currentState.StateType.Name, trigger));
-
-                    // Queue up the transition
-                    EnterNewState(previousStateType, matchingTrigger.TargetState);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Exits the current state and returns the Type of it.
-        /// </summary>
-        /// <returns></returns>
-        private Type ExitCurrentState(bool addToHistory)
-        {
-            if (_currentState == null)
-                return null;
-            else
-            {
-                _currentState.Exit();
-
-                // Record it in the history
-                if (addToHistory)
-                    AddStateToHistory(_currentState);
-
-                return _currentState.StateType;
-            }
-        }
-
-        private void AddStateToHistory(StateConfiguration state)
-        {
-            lock (_stateHistoryLockObject)
-            {
-                if (state != null)
-                    _stateHistory.Insert(0, state);
-                
-                // Time to trim it?
-                if (_stateHistory.Count > _stateHistoryTrimThreshold)
-                {
-                    var trimValue = (int) (_stateHistoryTrimThreshold*(1.0 - STATEHISTORY_TRIM_PERCENTAGE));
-                    while (_stateHistory.Count > trimValue)
-                        _stateHistory.RemoveAt(trimValue);
-                }
-            }
-        }
-
         public void Trigger(TTrigger trigger)
         {
+            ThrowOnNotStarted();
+
             // Queue it up
             lock (_queueLockObject)
             {
@@ -493,7 +500,12 @@ namespace Solid.State
         public StateInstantiationMode StateInstantiationMode
         {
             get { return _stateInstantiationMode; }
-            set { _stateInstantiationMode = value; }
+            set
+            {
+                // This is only OK to change 
+                ThrowOnStarted("The StateInstantiationMode must be set before the state machine is started!");
+                _stateInstantiationMode = value;
+            }
         }
 
         /// <summary>
