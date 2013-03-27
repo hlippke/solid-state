@@ -399,5 +399,32 @@ namespace Solid.State.Tests
             Assert.IsTrue(sm.CurrentState is DiallingState, "Expected state DiallingState... again");
 
         }
+
+        /// <summary>
+        /// Tests that the Stop method makes a final call to the current state's Exit method to 
+        /// allow it to do cleanup etc.
+        /// </summary>
+        [TestMethod]
+        public void StopCallsExit()
+        {
+            var sm = new TestStateMachine();
+
+            sm.State<IdleState>()
+                .On(TelephoneTrigger.PickingUpPhone).GoesTo<CountingState>();
+            sm.State<CountingState>()
+                .On(TelephoneTrigger.HangingUp).GoesTo<IdleState>();
+
+            sm.Start();
+
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+            sm.Trigger(TelephoneTrigger.HangingUp);
+            sm.Trigger(TelephoneTrigger.PickingUpPhone);
+
+            Assert.IsTrue((sm.EnteringCount == 2) && (sm.ExitingCount == 1), "Unexpected EnteringCount / ExitingCount!");
+
+            sm.Stop();
+
+            Assert.IsTrue((sm.EnteringCount == 2) && (sm.ExitingCount == 2), "Unexpected EnteringCount / ExitingCount on Stop!");
+        }
     }
 }

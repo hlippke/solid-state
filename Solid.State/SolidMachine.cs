@@ -263,6 +263,27 @@ namespace Solid.State
         }
 
         /// <summary>
+        /// Stops the state machine by exiting the current state without entering a new one.
+        /// </summary>
+        public void Stop()
+        {
+            // Ignore this call if the machine hasn't been started yet.
+            if (!_isStarted)
+                return;
+
+            try
+            {
+                // Exit the current state and raise an event about it
+                var previousStateType = ExitCurrentState(false);
+                OnTransitioned(new TransitionedEventArgs(previousStateType, null));
+            }
+            finally
+            {
+                _isStarted = false;
+            }
+        }
+
+        /// <summary>
         /// Sets the invalid trigger handler that will be called when a trigger is used
         /// that isn't valid for the current state. If no handler is specified, an
         /// exception will be thrown.
