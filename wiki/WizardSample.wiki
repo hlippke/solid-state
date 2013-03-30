@@ -1,4 +1,5 @@
-The WizardSample application shows how Solid.State can use Windows Forms `UserControl` classes as states, letting each state be represented by a user control that gathers information in the wizard. The configuration of the state machine utilizes information from the wizard pages to determine the control flow through the state machine.
+#labels Featured
+The [https://code.google.com/p/solid-state/downloads/detail?name=WizardSample.1.2.0.zip WizardSample] application shows how Solid.State can use Windows Forms `UserControl` classes as states, letting each state be represented by a user control that gathers information in the wizard. The configuration of the state machine utilizes information from the wizard pages to determine the control flow through the state machine.
 
 =Points of interest=
 The main action of this sample application takes place in the `MainForm` class, configuring the machine and reacting to buttons that are clicked.
