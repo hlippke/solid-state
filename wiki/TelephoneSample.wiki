@@ -1,7 +1,7 @@
 #labels Featured
 The [https://code.google.com/p/solid-state/downloads/detail?name=TelephoneSample.1.2.0.zip TelephoneSample] application is meant to demonstrate how a state machine can be set up with dedicated state classes and a [http://en.wikipedia.org/wiki/Inversion_of_control IoC] container serving up states to enable dependency injection into them.
 
-It is a .NET 4 Windows Forms application. The zip-file under Downloads only contains the executables, if you want to look at the source you must perform a svn checkout and pull the entire solution.
+It is a .NET 4 Windows Forms application. The zip-file under Downloads only contains the executables, if you want to look at the source you must perform a [https://code.google.com/p/solid-state/source/checkout svn checkout] and pull the entire solution.
 
 =Points of interest=
 
