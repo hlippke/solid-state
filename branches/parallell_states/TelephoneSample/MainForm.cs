@@ -137,7 +137,7 @@ namespace TelephoneSample
         {
             UpdateAvailableTriggers();
 
-            UpdateStateLabel(eventArgs.TargetState);
+            UpdateStateLabel(eventArgs.TargetState.GetType());
         }
 
         /// <summary>

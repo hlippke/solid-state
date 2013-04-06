@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using Solid.State.Tests.Parallel;
 
 namespace Solid.State.Tests.TestStates
 {
@@ -33,21 +34,6 @@ namespace Solid.State.Tests.TestStates
         {
             _timer.Dispose();
         }
-    }
-
-    public enum ParallelTrigger
-    {
-        State1Ended,
-        State2Ended,
-        State2EndedDetour,
-        State3_1Ended,
-        State3_2Ended,
-        State3_3Ended,
-        State4_1Ended,
-        State4_2Ended,
-        State5_1Ended,
-        State5_2_1Ended,
-        State5_2_2Ended
     }
 
     public class ParaState1 : ParaState
