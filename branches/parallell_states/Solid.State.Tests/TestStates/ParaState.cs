@@ -170,12 +170,10 @@ namespace Solid.State.Tests.TestStates
     {
         public void Entering(object context)
         {
-            throw new System.NotImplementedException();
         }
 
         public void Exiting(object context)
         {
-            throw new System.NotImplementedException();
         }
     }
 }
