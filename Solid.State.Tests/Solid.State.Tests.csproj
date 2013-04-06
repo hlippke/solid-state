@@ -55,7 +55,8 @@
   <ItemGroup>
     <Compile Include="ErrorConditionTests.cs" />
     <Compile Include="BehaviorTests.cs" />
-    <Compile Include="ParallelTests.cs" />
+    <Compile Include="Parallel\ParallelMachine.cs" />
+    <Compile Include="Parallel\ParallelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TelephoneStates\ConversationState.cs" />
     <Compile Include="TelephoneStates\DiallingState.cs" />

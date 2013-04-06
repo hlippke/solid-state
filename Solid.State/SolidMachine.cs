@@ -19,7 +19,7 @@ namespace Solid.State
         private readonly List<StateConfiguration> _stateHistory;
 
         private StateConfiguration _initialState;
-        private StateConfiguration _currentState;
+        private List<StateConfiguration> _currentStates;
         
         private bool _initialStateConfigured;
         private bool _isStarted;
@@ -60,42 +60,49 @@ namespace Solid.State
         /// <summary>
         /// Enters a new state (if there is one) and raises the OnTransitioned event.
         /// </summary>
-        private void EnterNewState(Type previousStateType, StateConfiguration state)
+        private void EnterNewStates(Type previousStateType, StateConfiguration[] states)
         {
-            _currentState = state;
-
-            Type currentStateType = null;
-
-            // Are we entering a new state?
-            if (_currentState != null)
+            foreach (var state in states)
             {
-                currentStateType = _currentState.StateType;
-                _currentState.Enter();
-            }
+                // If this state is already the current state, there is a configuration error in the state machine
+                if (_currentStates.Contains(state))
+                    throw new SolidStateException(
+                        string.Format(
+                            "There are multiple parallel paths to state {0}, please check your state machine configuration!",
+                            state.StateType.Name));
+                
+                if (state != null)
+                    _currentStates.Add(state);
 
-            // Raise an event about the transition
-            OnTransitioned(new TransitionedEventArgs(previousStateType, currentStateType));
+                // Are we entering a new state?
+                if (state != null)
+                    state.Enter();
+
+                // Raise an event about the transition (where TargetState can be null)
+                OnTransitioned(new TransitionedEventArgs(previousStateType, (state == null) ? null : state.StateInstance));
+            }
         }
 
         /// <summary>
         /// Exits the current state and returns the Type of it.
         /// </summary>
         /// <returns></returns>
-        private Type ExitCurrentState(bool addToHistory)
+        private Type ExitState(StateConfiguration state, bool addToHistory)
         {
-            if (_currentState == null)
+            if (state == null)
                 return null;
             else
             {
-                _currentState.Exit();
+                state.Exit();
 
-                // Record it in the history
-                if (addToHistory)
-                    AddStateToHistory(_currentState);
+                // Record it in the history (but only if we're not running in parallel)
+                if (addToHistory && (_currentStates.Count == 1))
+                    AddStateToHistory(state);
 
-                var stateType = _currentState.StateType;
-                _currentState = null;
-                return stateType;
+                // Remove from current states
+                _currentStates.Remove(state);
+
+                return state.StateType;
             }
         }
 
@@ -105,55 +112,78 @@ namespace Solid.State
         /// <param name="trigger"></param>
         private void DoTrigger(TTrigger trigger)
         {
-            // Find all trigger configurations with a matching trigger
-            var triggers = _currentState.TriggerConfigurations.Where(x => x.Trigger.Equals(trigger)).ToList();
+            var triggerHandled = false;
 
-            // No trigger configs found?
-            if (triggers.Count == 0)
+            // Make a copy of the current states since it will be manipulated
+            var states = new List<StateConfiguration>(_currentStates);
+
+            foreach (var state in states)
             {
-                // Do we have a handler for the situation?
-                if (_invalidTriggerHandler == null)
-                    throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!", trigger,
-                                                            _currentState.StateType.Name));
-                // Let the handler decide what to do
-                _invalidTriggerHandler(_currentState.StateType, trigger);
-            }
-            else
-            {
-                // Is it a single, unguarded trigger?
-                if (triggers[0].GuardClause == null)
+                // Find all trigger configurations with a matching trigger
+                var triggers = state.TriggerConfigurations.Where(x => x.Trigger.Equals(trigger)).ToList();
+
+                // No trigger configs found?
+                if (triggers.Count == 0)
                 {
-                    var previousStateType = ExitCurrentState(addToHistory: true);
-                    EnterNewState(previousStateType, triggers[0].TargetState);
+                    // Do we have a handler for the situation? If there is only one current state, raise an exception
+                    if ((_invalidTriggerHandler == null) && (_currentStates.Count == 1))
+                        throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!",
+                                                                    trigger,
+                                                                    state.StateType.Name));
+
+                    // Let the handler decide what to do
+                    _invalidTriggerHandler(state.StateType, trigger);
                 }
                 else
                 {
-                    // First exit the current state, it may affect the evaluation of the guard clauses
-                    var previousStateType = ExitCurrentState(addToHistory: true);
-
-                    TriggerConfiguration matchingTrigger = null;
-                    foreach (var tr in triggers)
+                    // Is it a single, unguarded trigger?
+                    if (triggers[0].GuardClause == null)
                     {
-                        if (tr.GuardClause())
+                        var previousStateType = ExitState(state, addToHistory: true);
+                        triggerHandled = true;
+                        EnterNewStates(previousStateType, triggers[0].TargetStates);
+                    }
+                    else
+                    {
+                        // First exit the current state, it may affect the evaluation of the guard clauses
+                        var previousStateType = ExitState(state, addToHistory: true);
+
+                        TriggerConfiguration matchingTrigger = null;
+                        foreach (var tr in triggers)
                         {
-                            if (matchingTrigger != null)
+                            if (tr.GuardClause())
+                            {
+                                if (matchingTrigger != null)
+                                    throw new SolidStateException(string.Format(
+                                        "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
+                                        previousStateType.Name, trigger));
+                                matchingTrigger = tr;
+                            }
+                        }
+
+                        // Did we find a matching trigger and there is only one current state?
+                        if (matchingTrigger == null)
+                        {
+                            if (_currentStates.Count == 1)
                                 throw new SolidStateException(string.Format(
-                                    "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
+                                    "State {0}, trigger {1} has no guard clause that evaulate to True!",
                                     previousStateType.Name, trigger));
-                            matchingTrigger = tr;
+                        }
+                        else
+                        {
+                            triggerHandled = true;
+                            // Queue up the transition
+                            EnterNewStates(previousStateType, matchingTrigger.TargetStates);
                         }
                     }
-
-                    // Did we find a matching trigger?
-                    if (matchingTrigger == null)
-                        throw new SolidStateException(string.Format(
-                            "State {0}, trigger {1} has no guard clause that evaulate to True!",
-                            previousStateType.Name, trigger));
-
-                    // Queue up the transition
-                    EnterNewState(previousStateType, matchingTrigger.TargetState);
                 }
             }
+
+            // Was the trigger handled and there is no handler?
+            if (!triggerHandled && (_invalidTriggerHandler == null))
+                throw new SolidStateException(
+                    string.Format("Trigger {0} is not valid for any of the current states: {1}", trigger,
+                                  string.Join(", ", _currentStates.Select(x => x.StateType.Name))));
         }
 
         private void AddStateToHistory(StateConfiguration state)
@@ -265,11 +295,11 @@ namespace Solid.State
         /// <returns></returns>
         private List<TTrigger> GetValidTriggers()
         {
-            if (!_isStarted || (_currentState == null))
+            if (!_isStarted || (_currentStates == null))
                 return new List<TTrigger>();
 
-            // Return a distinct list (no duplicates) of triggers
-            return _currentState.TriggerConfigurations.Select(x => x.Trigger).Distinct().ToList();
+            // Return a distinct list (no duplicates) of triggers for all current states
+            return _currentStates.SelectMany(x => x.TriggerConfigurations).Select(x => x.Trigger).Distinct().ToList();
         }
 
         // Protected methods
@@ -291,6 +321,7 @@ namespace Solid.State
             _stateConfigurations = new Dictionary<Type, StateConfiguration>();
             _transitionQueue = new List<Action>();
             _stateHistory = new List<StateConfiguration>();
+            _currentStates = new List<StateConfiguration>();
 
             _stateHistoryTrimThreshold = DEFAULT_STATEHISTORY_TRIM_THRESHOLD;
         }
@@ -360,7 +391,7 @@ namespace Solid.State
             _isStarted = true;
 
             // Enter the initial state
-            EnterNewState(null, _initialState);
+            EnterNewStates(null, new[] {_initialState});
         }
 
         /// <summary>
@@ -378,9 +409,13 @@ namespace Solid.State
                 lock (_queueLockObject)
                     _transitionQueue.Clear();
 
-                // Exit the current state and raise an event about it
-                var previousStateType = ExitCurrentState(false);
-                OnTransitioned(new TransitionedEventArgs(previousStateType, null));
+                // Exit the current states and raise an event about each
+                var states = new List<StateConfiguration>(_currentStates);
+                foreach (var state in states)
+                {
+                    var previousStateType = ExitState(state, false);
+                    OnTransitioned(new TransitionedEventArgs(previousStateType, null));
+                }
             }
             finally
             {
@@ -421,6 +456,9 @@ namespace Solid.State
         /// </summary>
         public void GoBack()
         {
+            if (_currentStates.Count > 1)
+                throw new SolidStateException("Cannot go back when running parallel states!");
+
             StateConfiguration targetState;
             Type previousStateType;
 
@@ -430,14 +468,14 @@ namespace Solid.State
                 if (_stateHistory.Count == 0)
                     return;
 
-                previousStateType = ExitCurrentState(addToHistory: false);
+                previousStateType = ExitState(_currentStates[0], addToHistory: false);
 
                 targetState = _stateHistory[0];
                 _stateHistory.RemoveAt(0);
             }
 
             if (targetState != null)
-                EnterNewState(previousStateType, targetState);
+                EnterNewStates(previousStateType, new[] {targetState});
         }
 
         // Properties
@@ -453,15 +491,19 @@ namespace Solid.State
         /// <summary>
         /// Returns the state that the state machine is currently in.
         /// </summary>
-        public ISolidState CurrentState
+        public ISolidState[] CurrentStates
         {
-            get
-            {
-                if (_currentState == null)
-                    return null;
-                else
-                    return _currentState.StateInstance;
-            }
+            get { return _currentStates.Select(x => x.StateInstance).ToArray(); }
+        }
+
+        /// <summary>
+        /// Returns true if any of the current states are of the specified type.
+        /// </summary>
+        /// <typeparam name="TState"></typeparam>
+        /// <returns></returns>
+        public bool IsInState<TState>() where TState : ISolidState
+        {
+            return _currentStates.Any(x => x.StateInstance.GetType() == typeof (TState));
         }
 
         /// <summary>

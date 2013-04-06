@@ -197,7 +197,7 @@ namespace Solid.State.Tests
                 var sm = BuildTelephoneStateMachine();
                 sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
-                Assert.IsTrue(sm.CurrentState is DiallingState, "State expected to be DiallingState!");
+                Assert.IsTrue(sm.IsInState<DiallingState>(), "State expected to be DiallingState!");
 
                 sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
@@ -206,7 +206,7 @@ namespace Solid.State.Tests
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                Assert.IsTrue(ex is SolidStateException);
+                Assert.IsTrue(ex is SolidStateException, string.Format("Expected SolidState exception, got {0}", ex.GetType().Name));
             }
         }
     }

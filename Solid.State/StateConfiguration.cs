@@ -15,6 +15,8 @@ namespace Solid.State
             private readonly List<TriggerConfiguration> _triggerConfigurations;
             
             private ISolidState _stateInstance;
+            private int _totalJoinCount;
+            private int _currentJoinCount;
 
             // Private methods
 
@@ -140,6 +142,30 @@ namespace Solid.State
             internal ISolidState StateInstance
             {
                 get { return _stateInstance; }
+            }
+
+            /// <summary>
+            /// The number of state machine paths that join at this state. This value is set during
+            /// configuration and is static after the state machine is started.
+            /// </summary>
+            internal int TotalJoinCount
+            {
+                get { return _totalJoinCount; }
+                set
+                {
+                    _totalJoinCount = value;
+                    _currentJoinCount = value;
+                }
+            }
+
+            /// <summary>
+            /// The current join count, used during state machine execution to determine when to
+            /// enter a state that is the target of a join.
+            /// </summary>
+            internal int CurrentJoinCount
+            {
+                get { return _currentJoinCount; }
+                set { _currentJoinCount = value; }
             }
         }
     }

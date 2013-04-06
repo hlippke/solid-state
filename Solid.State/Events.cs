@@ -16,14 +16,14 @@ namespace Solid.State
     {
         // Private variables
 
-        private Type _sourceState;
-        private Type _targetState;
+        private readonly Type _sourceStateType;
+        private readonly ISolidState _targetState;
 
         // Constructor
 
-        public TransitionedEventArgs(Type sourceState, Type targetState)
+        public TransitionedEventArgs(Type sourceStateType, ISolidState targetState)
         {
-            _sourceState = sourceState;
+            _sourceStateType = sourceStateType;
             _targetState = targetState;
         }
 
@@ -32,15 +32,15 @@ namespace Solid.State
         /// <summary>
         /// The source state of the transition.
         /// </summary>
-        public Type SourceState
+        public Type SourceStateType
         {
-            get { return _sourceState; }
+            get { return _sourceStateType; }
         }
 
         /// <summary>
         /// The target state of the transition.
         /// </summary>
-        public Type TargetState
+        public ISolidState TargetState
         {
             get { return _targetState; }
         }

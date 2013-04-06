@@ -43,7 +43,7 @@ namespace Solid.State.Tests
 
             sm.Start();
 
-            Assert.IsTrue(sm.CurrentState is IdleState);
+            Assert.IsTrue(sm.IsInState<IdleState>());
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace Solid.State.Tests
 
             sm.Start();
 
-            Assert.IsTrue(sm.CurrentState is RingingState);
+            Assert.IsTrue(sm.IsInState<RingingState>());
         }
 
         /// <summary>
@@ -75,11 +75,11 @@ namespace Solid.State.Tests
         public void OneStepUnguardedTransition()
         {
             var sm = BuildTelephoneStateMachine();
-            Assert.IsTrue(sm.CurrentState is IdleState);
+            Assert.IsTrue(sm.IsInState<IdleState>());
 
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
-            Assert.IsTrue(sm.CurrentState is DiallingState, "Unexpected current state!");
+            Assert.IsTrue(sm.IsInState<DiallingState>(), "Unexpected current state!");
         }
 
         /// <summary>
@@ -107,8 +107,8 @@ namespace Solid.State.Tests
 
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
-            Assert.IsTrue(sm.CurrentState is TelephoneBrokenState,
-                          string.Format("Telephone state is {0}, expected {1}", sm.CurrentState.GetType().Name,
+            Assert.IsTrue(sm.IsInState<TelephoneBrokenState>(),
+                          string.Format("Telephone state is {0}, expected {1}", sm.CurrentStates.GetType().Name,
                                         typeof (TelephoneBrokenState).Name));
 
             // Reset the machine to IdleState
@@ -118,8 +118,8 @@ namespace Solid.State.Tests
 
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
-            Assert.IsTrue(sm.CurrentState is DiallingState,
-                          string.Format("Telephone state is {0}, expected {1}", sm.CurrentState.GetType().Name,
+            Assert.IsTrue(sm.IsInState<DiallingState>(),
+                          string.Format("Telephone state is {0}, expected {1}", sm.CurrentStates.GetType().Name,
                                         typeof (DiallingState).Name));
         }
 
@@ -140,7 +140,7 @@ namespace Solid.State.Tests
 
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
-            Assert.IsTrue(sm.CurrentState is StateWithoutParameterlessConstructor);
+            Assert.IsTrue(sm.IsInState<StateWithoutParameterlessConstructor>());
         }
 
         /// <summary>
@@ -224,7 +224,7 @@ namespace Solid.State.Tests
             var sm = new SolidMachine<int>();
             sm.Transitioned += (sender, args) =>
                 {
-                    var stateName = args.TargetState.Name;
+                    var stateName = args.TargetState.GetType().Name;
                     Console.WriteLine("Transitioned to " + stateName);
 
                     states.Add(stateName);
@@ -303,8 +303,7 @@ namespace Solid.State.Tests
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
             // The CurrentState should have been freshly created, meaning that CountingState.EnteringSelfCount should be 1
-            Assert.IsTrue(
-                (sm.CurrentState is CountingState) && ((sm.CurrentState as CountingState).EnteringSelfCount == 2),
+            Assert.IsTrue(sm.IsInState<CountingState>() && ((sm.CurrentStates[0] as CountingState).EnteringSelfCount == 2),
                 string.Format("Unexpected EnteringSelfCount!"));
 
         }
@@ -335,7 +334,7 @@ namespace Solid.State.Tests
 
             // The CurrentState should have been freshly created, meaning that CountingState.EnteringSelfCount should be 1
             Assert.IsTrue(
-                (sm.CurrentState is CountingState) && ((sm.CurrentState as CountingState).EnteringSelfCount == 1),
+                sm.IsInState<CountingState>() && ((sm.CurrentStates[0] as CountingState).EnteringSelfCount == 1),
                 string.Format("Unexpected EnteringSelfCount!"));
 
         }
@@ -385,18 +384,18 @@ namespace Solid.State.Tests
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
             sm.Trigger(TelephoneTrigger.Answered);
 
-            Assert.IsTrue(sm.CurrentState is WaitForAnswerState, "Expected state WaitForAnswerState");
+            Assert.IsTrue(sm.IsInState<WaitForAnswerState>(), "Expected state WaitForAnswerState");
             sm.GoBack();
-            Assert.IsTrue(sm.CurrentState is DiallingState,
-                          string.Format("Expected state DiallingState, was {0}", sm.CurrentState.GetType().Name));
+            Assert.IsTrue(sm.IsInState<DiallingState>(),
+                          string.Format("Expected state DiallingState, was {0}", sm.CurrentStates.GetType().Name));
             
             // Shift the track
             isGoingToDialling = true;
             sm.Trigger(TelephoneTrigger.Answered);
 
-            Assert.IsTrue(sm.CurrentState is ConversationState, "Expected state ConversationState");
+            Assert.IsTrue(sm.IsInState<ConversationState>(), "Expected state ConversationState");
             sm.GoBack();
-            Assert.IsTrue(sm.CurrentState is DiallingState, "Expected state DiallingState... again");
+            Assert.IsTrue(sm.IsInState<DiallingState>(), "Expected state DiallingState... again");
 
         }
 
