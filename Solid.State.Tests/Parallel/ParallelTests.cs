@@ -1,8 +1,10 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Solid.State.Tests.TestStates;
 
 namespace Solid.State.Tests.Parallel
 {
+    [TestClass]
     public class ParallelTests
     {
         // Private methods
@@ -48,9 +50,73 @@ namespace Solid.State.Tests.Parallel
         // Test methods
 
         [TestMethod]
-        public void ParallelStates()
+        public void TwoCurrentStates()
         {
+            var sm = new SolidMachine<ParallelTrigger>();
+            sm.State<ParaState1>()
+                .On(ParallelTrigger.State1Ended).ForksTo<ParaState3_1, ParaState3_2>();
+            sm.Start();
+
+            sm.Trigger(ParallelTrigger.State1Ended);
+            Assert.IsTrue(sm.IsInState<ParaState3_1>() && sm.IsInState<ParaState3_2>(), "Not in both states!");
         }
- 
+
+        [TestMethod]
+        public void WaitForAllJoins()
+        {
+            var sm = new SolidMachine<ParallelTrigger>();
+            sm.State<ParaState1>()
+                .On(ParallelTrigger.State1Ended).ForksTo<ParaState3_1, ParaState3_2>();
+
+            sm.State<ParaState3_1>()
+                .On(ParallelTrigger.State3_1Ended).JoinsTo<ParaState6>();
+            sm.State<ParaState3_2>()
+                .On(ParallelTrigger.State3_2Ended).JoinsTo<ParaState6>();
+
+            sm.Start();
+
+            sm.Trigger(ParallelTrigger.State1Ended);
+            Assert.IsTrue(sm.IsInState<ParaState3_1>() && sm.IsInState<ParaState3_2>(), "Not in both states!");
+
+            sm.Trigger(ParallelTrigger.State3_1Ended);
+
+            Assert.IsTrue(!sm.IsInState<ParaState6>(), "Is in ParaState6 before all paths have completed!");
+
+            sm.Trigger(ParallelTrigger.State3_2Ended);
+
+            Assert.IsTrue(sm.IsInState<ParaState6>(), "Is NOT in ParaState6 after paths have converged!");
+        }
+
+        /// <summary>
+        /// Makes sure that an exception is thrown if a trigger matches none of the current states.
+        /// </summary>
+        [TestMethod]
+        public void InvalidParallelTrigger()
+        {
+            var sm = new SolidMachine<ParallelTrigger>();
+            sm.State<ParaState1>()
+                .On(ParallelTrigger.State1Ended).ForksTo<ParaState3_1, ParaState3_2>();
+
+            sm.State<ParaState3_1>()
+                .On(ParallelTrigger.State3_1Ended).JoinsTo<ParaState6>();
+            sm.State<ParaState3_2>()
+                .On(ParallelTrigger.State3_2Ended).JoinsTo<ParaState6>();
+
+            sm.Start();
+
+            // OK trigger
+            sm.Trigger(ParallelTrigger.State1Ended);
+
+            try
+            {
+                sm.Trigger(ParallelTrigger.State5_2_2Ended);
+
+                Assert.Fail("Accepted invalid trigger!");
+            }
+            catch (Exception ex)
+            {
+                Assert.IsTrue(ex is SolidStateException, string.Format("Unexpected exception: {0}", ex));
+            }
+        }
     }
 }

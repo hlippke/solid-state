@@ -10,6 +10,7 @@ namespace Solid.State
 
         private const int DEFAULT_STATEHISTORY_TRIM_THRESHOLD = 100;
         private const int MIN_STATEHISTORY_TRIM_THRESHOLD = 10;
+        private const double STATEHISTORY_TRIM_PERCENTAGE = 0.1; // Trim 10% of state history
 
         private readonly object _queueLockObject = new object();
         private readonly object _stateHistoryLockObject = new object();
@@ -34,7 +35,7 @@ namespace Solid.State
         
         private StateInstantiationMode _stateInstantiationMode;
         private int _stateHistoryTrimThreshold;
-        private const double STATEHISTORY_TRIM_PERCENTAGE = 0.1; // Trim 10% of state history
+        private int _forkCount;
 
         // Private methods
 
@@ -60,8 +61,12 @@ namespace Solid.State
         /// <summary>
         /// Enters a new state (if there is one) and raises the OnTransitioned event.
         /// </summary>
-        private void EnterNewStates(Type previousStateType, StateConfiguration[] states)
+        private void EnterNewStates(Type previousStateType, StateConfiguration[] states, bool isJoin)
         {
+            // Are we forking?
+            if (states.Length > 1)
+                _forkCount++;
+
             foreach (var state in states)
             {
                 // If this state is already the current state, there is a configuration error in the state machine
@@ -71,15 +76,31 @@ namespace Solid.State
                             "There are multiple parallel paths to state {0}, please check your state machine configuration!",
                             state.StateType.Name));
                 
-                if (state != null)
-                    _currentStates.Add(state);
+                var enterStateNow = true;
 
-                // Are we entering a new state?
-                if (state != null)
-                    state.Enter();
+                // Is this a join? Then check if all paths have joined
+                if (isJoin)
+                {
+                    state.CurrentJoinCount--;
+                    if (state.CurrentJoinCount > 0)
+                        enterStateNow = false;
+                    else
+                        _forkCount--;
+                }
 
-                // Raise an event about the transition (where TargetState can be null)
-                OnTransitioned(new TransitionedEventArgs(previousStateType, (state == null) ? null : state.StateInstance));
+                if (enterStateNow)
+                {
+                    if (state != null)
+                        _currentStates.Add(state);
+
+                    // Are we entering a new state?
+                    if (state != null)
+                        state.Enter();
+
+                    // Raise an event about the transition (where TargetState can be null)
+                    OnTransitioned(new TransitionedEventArgs(previousStateType,
+                                                             (state == null) ? null : state.StateInstance));
+                }
             }
         }
 
@@ -126,13 +147,16 @@ namespace Solid.State
                 if (triggers.Count == 0)
                 {
                     // Do we have a handler for the situation? If there is only one current state, raise an exception
-                    if ((_invalidTriggerHandler == null) && (_currentStates.Count == 1))
-                        throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!",
-                                                                    trigger,
-                                                                    state.StateType.Name));
-
-                    // Let the handler decide what to do
-                    _invalidTriggerHandler(state.StateType, trigger);
+                    if (_invalidTriggerHandler == null)
+                    {
+                        if (_forkCount == 0)
+                            throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!",
+                                                                        trigger,
+                                                                        state.StateType.Name));
+                    }
+                    else
+                        // Let the handler decide what to do
+                        _invalidTriggerHandler(state.StateType, trigger);
                 }
                 else
                 {
@@ -141,7 +165,7 @@ namespace Solid.State
                     {
                         var previousStateType = ExitState(state, addToHistory: true);
                         triggerHandled = true;
-                        EnterNewStates(previousStateType, triggers[0].TargetStates);
+                        EnterNewStates(previousStateType, triggers[0].TargetStates, triggers[0].IsJoin);
                     }
                     else
                     {
@@ -161,10 +185,10 @@ namespace Solid.State
                             }
                         }
 
-                        // Did we find a matching trigger and there is only one current state?
+                        // Did we find a matching trigger and are not forked?
                         if (matchingTrigger == null)
                         {
-                            if (_currentStates.Count == 1)
+                            if (_forkCount == 0)
                                 throw new SolidStateException(string.Format(
                                     "State {0}, trigger {1} has no guard clause that evaulate to True!",
                                     previousStateType.Name, trigger));
@@ -173,7 +197,7 @@ namespace Solid.State
                         {
                             triggerHandled = true;
                             // Queue up the transition
-                            EnterNewStates(previousStateType, matchingTrigger.TargetStates);
+                            EnterNewStates(previousStateType, matchingTrigger.TargetStates, matchingTrigger.IsJoin);
                         }
                     }
                 }
@@ -391,7 +415,7 @@ namespace Solid.State
             _isStarted = true;
 
             // Enter the initial state
-            EnterNewStates(null, new[] {_initialState});
+            EnterNewStates(null, new[] {_initialState}, isJoin: false);
         }
 
         /// <summary>
@@ -475,7 +499,7 @@ namespace Solid.State
             }
 
             if (targetState != null)
-                EnterNewStates(previousStateType, new[] {targetState});
+                EnterNewStates(previousStateType, new[] {targetState}, isJoin: false);
         }
 
         // Properties
