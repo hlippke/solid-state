@@ -48,6 +48,7 @@
     <Compile Include="SolidState.cs" />
     <Compile Include="StateConfiguration.cs" />
     <Compile Include="TriggerConfiguration.cs" />
+    <Compile Include="TriggerDispatcher.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

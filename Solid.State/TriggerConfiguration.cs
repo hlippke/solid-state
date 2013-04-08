@@ -14,7 +14,6 @@ namespace Solid.State
             private readonly Func<bool> _guardClause;
 
             private StateConfiguration[] _targetStates;
-            private bool _isJoin;
 
             // Private methods
 
@@ -47,7 +46,10 @@ namespace Solid.State
             /// </summary>
             public StateConfiguration GoesTo<TTargetState>() where TTargetState : ISolidState
             {
-                _targetStates = new[] {_owningStateConfiguration.OwningMachine.State<TTargetState>()};
+                _targetStates = new[]
+                    {
+                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState), _owningStateConfiguration.PathIndex)
+                    };
 
                 // Return the correct StateConfiguration
                 return GetStateConfiguration();
@@ -61,8 +63,8 @@ namespace Solid.State
             {
                 _targetStates = new[]
                     {
-                        _owningStateConfiguration.OwningMachine.State<TTargetState1>(),
-                        _owningStateConfiguration.OwningMachine.State<TTargetState2>()
+                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState1), _owningStateConfiguration.PathIndex),
+                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState2), _owningStateConfiguration.PathIndex+1)
                     };
 
                 return GetStateConfiguration();
@@ -76,9 +78,9 @@ namespace Solid.State
             {
                 _targetStates = new[]
                     {
-                        _owningStateConfiguration.OwningMachine.State<TTargetState1>(),
-                        _owningStateConfiguration.OwningMachine.State<TTargetState2>(),
-                        _owningStateConfiguration.OwningMachine.State<TTargetState3>()
+                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState1), _owningStateConfiguration.PathIndex),
+                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState2), _owningStateConfiguration.PathIndex+1),
+                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState3), _owningStateConfiguration.PathIndex+2)
                     };
 
                 return GetStateConfiguration();
@@ -87,13 +89,15 @@ namespace Solid.State
             public StateConfiguration JoinsTo<TTargetState>() where TTargetState : ISolidState
             {
                 var targetState = _owningStateConfiguration.OwningMachine.State<TTargetState>();
-                _targetStates = new[] {targetState};
 
-                // Mark this configuration as a join
-                _isJoin = true;
+                // The target adopts the lowest path index of all the states that join at it
+                if ((targetState.PathIndex<0) || (_owningStateConfiguration.PathIndex<targetState.PathIndex))
+                    targetState.PathIndex = _owningStateConfiguration.PathIndex;
 
-                // Increase the target join count
+                IsJoin = true;
                 targetState.TotalJoinCount++;
+
+                _targetStates = new[] {targetState};
 
                 return GetStateConfiguration();
             }
@@ -115,10 +119,7 @@ namespace Solid.State
                 get { return _guardClause; }
             }
 
-            internal bool IsJoin
-            {
-                get { return _isJoin; }
-            }
+            public bool IsJoin { get; set; }
         }
     }
 }

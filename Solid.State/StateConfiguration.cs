@@ -16,7 +16,7 @@ namespace Solid.State
             
             private ISolidState _stateInstance;
             private int _totalJoinCount;
-            private int _currentJoinCount;
+            private int _joinCounter;
 
             // Private methods
 
@@ -25,11 +25,16 @@ namespace Solid.State
                 return _triggerConfigurations.FirstOrDefault(x => (x.Trigger.Equals(trigger)));
             }
 
+            // Internal methods
+
             /// <summary>
             /// Enters a state, creating an instance of it if necessary.
             /// </summary>
             internal void Enter()
             {
+                // Reset the join counter
+                _joinCounter = _totalJoinCount;
+
                 // Should a new instance be created?
                 if ((_stateInstance == null) || (_owningMachine._stateInstantiationMode == StateInstantiationMode.PerTransition))
                     _stateInstance = _owningMachine.InstantiateState(_stateType);
@@ -50,6 +55,58 @@ namespace Solid.State
                     if (_owningMachine._stateInstantiationMode == StateInstantiationMode.PerTransition)
                         _stateInstance = null;
                 }
+            }
+
+            // Internal properties
+
+            internal SolidMachine<TTrigger> OwningMachine
+            {
+                get { return _owningMachine; }
+            }
+
+            internal List<TriggerConfiguration> TriggerConfigurations
+            {
+                get { return _triggerConfigurations; }
+            }
+
+            internal Type StateType
+            {
+                get { return _stateType; }
+            }
+
+            internal ISolidState StateInstance
+            {
+                get { return _stateInstance; }
+            }
+
+            /// <summary>
+            /// The index of the path that this state belongs to. New paths are created by
+            /// forking the flow, and paths cease to exist when joins are performed.
+            /// </summary>
+            internal int PathIndex { get; set; }
+
+            /// <summary>
+            /// The total number of joins that converge on this state. It is used to determine
+            /// when the state should actually be entered.
+            /// </summary>
+            internal int TotalJoinCount
+            {
+                get { return _totalJoinCount; }
+                set
+                {
+                    _totalJoinCount = value;
+                    _joinCounter = _totalJoinCount;
+                }
+            }
+
+            /// <summary>
+            /// Counts down as join transitions use this state as their target. When the counter
+            /// has reached 0, the state is actually entered.
+            /// </summary>
+            internal int JoinCounter
+            {
+                get { return _joinCounter; }
+                set { _joinCounter = value; }
             }
 
             // Constructor
@@ -120,52 +177,6 @@ namespace Solid.State
                 _triggerConfigurations.Add(newConfiguration);
 
                 return newConfiguration;
-            }
-
-            // Properties
-
-            internal SolidMachine<TTrigger> OwningMachine
-            {
-                get { return _owningMachine; }
-            }
-
-            internal List<TriggerConfiguration> TriggerConfigurations
-            {
-                get { return _triggerConfigurations; }
-            }
-
-            internal Type StateType
-            {
-                get { return _stateType; }
-            }
-
-            internal ISolidState StateInstance
-            {
-                get { return _stateInstance; }
-            }
-
-            /// <summary>
-            /// The number of state machine paths that join at this state. This value is set during
-            /// configuration and is static after the state machine is started.
-            /// </summary>
-            internal int TotalJoinCount
-            {
-                get { return _totalJoinCount; }
-                set
-                {
-                    _totalJoinCount = value;
-                    _currentJoinCount = value;
-                }
-            }
-
-            /// <summary>
-            /// The current join count, used during state machine execution to determine when to
-            /// enter a state that is the target of a join.
-            /// </summary>
-            internal int CurrentJoinCount
-            {
-                get { return _currentJoinCount; }
-                set { _currentJoinCount = value; }
             }
         }
     }
