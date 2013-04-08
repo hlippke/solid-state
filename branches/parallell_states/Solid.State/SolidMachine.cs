@@ -35,7 +35,6 @@ namespace Solid.State
         
         private StateInstantiationMode _stateInstantiationMode;
         private int _stateHistoryTrimThreshold;
-        private int _forkCount;
 
         // Private methods
 
@@ -63,10 +62,6 @@ namespace Solid.State
         /// </summary>
         private void EnterNewStates(Type previousStateType, StateConfiguration[] states, bool isJoin)
         {
-            // Are we forking?
-            if (states.Length > 1)
-                _forkCount++;
-
             foreach (var state in states)
             {
                 // If this state is already the current state, there is a configuration error in the state machine
@@ -75,20 +70,15 @@ namespace Solid.State
                         string.Format(
                             "There are multiple parallel paths to state {0}, please check your state machine configuration!",
                             state.StateType.Name));
-                
-                var enterStateNow = true;
 
-                // Is this a join? Then check if all paths have joined
+                var isOkToEnterNow = true;
                 if (isJoin)
                 {
-                    state.CurrentJoinCount--;
-                    if (state.CurrentJoinCount > 0)
-                        enterStateNow = false;
-                    else
-                        _forkCount--;
+                    state.JoinCounter--;
+                    isOkToEnterNow = (state.JoinCounter == 0);
                 }
 
-                if (enterStateNow)
+                if (isOkToEnterNow)
                 {
                     if (state != null)
                         _currentStates.Add(state);
@@ -149,7 +139,7 @@ namespace Solid.State
                     // Do we have a handler for the situation? If there is only one current state, raise an exception
                     if (_invalidTriggerHandler == null)
                     {
-                        if (_forkCount == 0)
+                        if (state.PathIndex < 0)
                             throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!",
                                                                         trigger,
                                                                         state.StateType.Name));
@@ -188,7 +178,7 @@ namespace Solid.State
                         // Did we find a matching trigger and are not forked?
                         if (matchingTrigger == null)
                         {
-                            if (_forkCount == 0)
+                            if (state.PathIndex < 0)
                                 throw new SolidStateException(string.Format(
                                     "State {0}, trigger {1} has no guard clause that evaulate to True!",
                                     previousStateType.Name, trigger));
@@ -203,7 +193,7 @@ namespace Solid.State
                 }
             }
 
-            // Was the trigger handled and there is no handler?
+            // Was the trigger unhandled and there is no external handler?
             if (!triggerHandled && (_invalidTriggerHandler == null))
                 throw new SolidStateException(
                     string.Format("Trigger {0} is not valid for any of the current states: {1}", trigger,
@@ -262,6 +252,43 @@ namespace Solid.State
             {
                 _isProcessingQueue = false;
             }
+        }
+
+        private StateConfiguration LinkToState(StateConfiguration sourceState, Type targetStateType, int pathIndex)
+        {
+            // Does the state have a parameterless constructor? Otherwise a state resolver is required
+            HandleResolverRequired(targetStateType);
+
+            // Does a configuration for this state exist already?
+            StateConfiguration configuration;
+            if (_stateConfigurations.ContainsKey(targetStateType))
+            {
+                configuration = _stateConfigurations[targetStateType];
+
+                // If the target state doesn't belong to any path yet, it adopts the source state's index
+                if (configuration.PathIndex < 0)
+                    configuration.PathIndex = sourceState == null ? 0 : sourceState.PathIndex;
+
+                if ((sourceState != null) && (sourceState.PathIndex != configuration.PathIndex))
+                    throw new SolidStateException(
+                        string.Format(
+                            "Cannot create a transition from state {0} to state {1}, they're on different paths!",
+                            sourceState.StateType.Name, targetStateType.Name));
+            }
+            else
+            {
+                configuration = new StateConfiguration(targetStateType, this);
+                configuration.PathIndex = pathIndex;
+
+                // If this is the first state that is added, it becomes the initial state
+                if (_stateConfigurations.Count == 0)
+                    _initialState = configuration;
+
+                _stateConfigurations.Add(targetStateType, configuration);
+            }
+
+            return configuration;
+
         }
 
         /// <summary>
@@ -371,32 +398,15 @@ namespace Solid.State
         // Public methods
 
         /// <summary>
-        /// Defines a state that should be configured.
+        /// Defines a state that should be configured. Since this method belongs to the state
+        /// machine, it it not possible to determine the correct path index for the state, so
+        /// it's set to -1 = undefined.
         /// </summary>
         /// <typeparam name="TState"></typeparam>
         /// <returns></returns>
         public StateConfiguration State<TState>() where TState : ISolidState
         {
-            var type = typeof (TState);
-            // Does the state have a parameterless constructor? Otherwise a state resolver is required
-            HandleResolverRequired(type);
-
-            // Does a configuration for this state exist already?
-            StateConfiguration configuration;
-            if (_stateConfigurations.ContainsKey(typeof(TState)))
-                configuration = _stateConfigurations[typeof(TState)];
-            else
-            {
-                configuration = new StateConfiguration(type, this);
-
-                // If this is the first state that is added, it becomes the initial state
-                if (_stateConfigurations.Count == 0)
-                    _initialState = configuration;
-
-                _stateConfigurations.Add(type, configuration);
-            }
-
-            return configuration;
+            return LinkToState(null, typeof (TState), -1);
         }
 
         /// <summary>
@@ -513,7 +523,7 @@ namespace Solid.State
         }
 
         /// <summary>
-        /// Returns the state that the state machine is currently in.
+        /// Returns an array of the states the machine is currently in.
         /// </summary>
         public ISolidState[] CurrentStates
         {
@@ -531,7 +541,7 @@ namespace Solid.State
         }
 
         /// <summary>
-        /// A list of the triggers that are valid to use on the current state.
+        /// A list of the triggers that are valid to use on any of the current states.
         /// If the machine hasn't been started yet, this list is empty.
         /// </summary>
         public List<TTrigger> ValidTriggers
