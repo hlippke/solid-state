@@ -15,6 +15,7 @@ namespace Solid.State
         private readonly object _queueLockObject = new object();
         private readonly object _stateHistoryLockObject = new object();
 
+        private readonly TriggerHandler _triggerHandler;
         private readonly Dictionary<Type, StateConfiguration> _stateConfigurations;
         private readonly List<Action> _transitionQueue;
         private readonly List<StateConfiguration> _stateHistory;
@@ -369,6 +370,7 @@ namespace Solid.State
 
         public SolidMachine()
         {
+            _triggerHandler = new TriggerHandler();
             _stateConfigurations = new Dictionary<Type, StateConfiguration>();
             _transitionQueue = new List<Action>();
             _stateHistory = new List<StateConfiguration>();
@@ -479,7 +481,7 @@ namespace Solid.State
             lock (_queueLockObject)
             {
                 var localTrigger = trigger;
-                _transitionQueue.Add(() => DoTrigger(localTrigger));
+                _transitionQueue.Add(() => _triggerHandler.Handle(localTrigger));
             }
 
             ProcessTransitionQueue();
