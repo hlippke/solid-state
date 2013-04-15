@@ -47,6 +47,7 @@
     <Compile Include="SolidMachine.cs" />
     <Compile Include="SolidState.cs" />
     <Compile Include="StateConfiguration.cs" />
+    <Compile Include="StateHistoryHandler.cs" />
     <Compile Include="TriggerConfiguration.cs" />
     <Compile Include="TriggerHandler.cs" />
   </ItemGroup>

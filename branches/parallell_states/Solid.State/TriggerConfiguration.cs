@@ -19,19 +19,19 @@ namespace Solid.State
 
             private StateConfiguration GetStateConfiguration()
             {
-                var machine = _owningStateConfiguration.OwningMachine;
+                var machine = _owningStateConfiguration.Machine;
                 return machine._stateConfigurations[_owningStateConfiguration.StateType];
             }
 
             // Constructor
 
-            public TriggerConfiguration(TTrigger trigger, StateConfiguration owningStateConfiguration)
+            internal TriggerConfiguration(TTrigger trigger, StateConfiguration owningStateConfiguration)
             {
                 _trigger = trigger;
                 _owningStateConfiguration = owningStateConfiguration;
             }
 
-            public TriggerConfiguration(TTrigger trigger, Func<bool> guardClause,
+            internal TriggerConfiguration(TTrigger trigger, Func<bool> guardClause,
                                         StateConfiguration owningStateConfiguration)
             {
                 _guardClause = guardClause;
@@ -48,7 +48,7 @@ namespace Solid.State
             {
                 _targetStates = new[]
                     {
-                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState), _owningStateConfiguration.PathIndex)
+                        _owningStateConfiguration.Machine.LinkToState(_owningStateConfiguration, typeof(TTargetState), _owningStateConfiguration.PathIndex)
                     };
 
                 // Return the correct StateConfiguration
@@ -63,8 +63,8 @@ namespace Solid.State
             {
                 _targetStates = new[]
                     {
-                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState1), _owningStateConfiguration.PathIndex),
-                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState2), _owningStateConfiguration.PathIndex+1)
+                        _owningStateConfiguration.Machine.LinkToState(_owningStateConfiguration, typeof(TTargetState1), _owningStateConfiguration.PathIndex),
+                        _owningStateConfiguration.Machine.LinkToState(_owningStateConfiguration, typeof(TTargetState2), _owningStateConfiguration.PathIndex+1)
                     };
 
                 return GetStateConfiguration();
@@ -78,9 +78,9 @@ namespace Solid.State
             {
                 _targetStates = new[]
                     {
-                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState1), _owningStateConfiguration.PathIndex),
-                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState2), _owningStateConfiguration.PathIndex+1),
-                        _owningStateConfiguration.OwningMachine.LinkToState(_owningStateConfiguration, typeof(TTargetState3), _owningStateConfiguration.PathIndex+2)
+                        _owningStateConfiguration.Machine.LinkToState(_owningStateConfiguration, typeof(TTargetState1), _owningStateConfiguration.PathIndex),
+                        _owningStateConfiguration.Machine.LinkToState(_owningStateConfiguration, typeof(TTargetState2), _owningStateConfiguration.PathIndex+1),
+                        _owningStateConfiguration.Machine.LinkToState(_owningStateConfiguration, typeof(TTargetState3), _owningStateConfiguration.PathIndex+2)
                     };
 
                 return GetStateConfiguration();
@@ -88,7 +88,7 @@ namespace Solid.State
 
             public StateConfiguration JoinsTo<TTargetState>() where TTargetState : ISolidState
             {
-                var targetState = _owningStateConfiguration.OwningMachine.State<TTargetState>();
+                var targetState = _owningStateConfiguration.Machine.State<TTargetState>();
 
                 // The target adopts the lowest path index of all the states that join at it
                 if ((targetState.PathIndex<0) || (_owningStateConfiguration.PathIndex<targetState.PathIndex))
