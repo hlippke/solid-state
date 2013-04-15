@@ -7,8 +7,12 @@
         /// Handles logic concerning how a fired trigger affects the
         /// state machine.
         /// </summary>
-        public class TriggerDispatcher
+        public class TriggerHandler
         {
+            public void Handle(TTrigger trigger)
+            {
+                    
+            }
         }
     }
 }
