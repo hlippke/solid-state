@@ -118,89 +118,6 @@ namespace Solid.State
             }
         }
 
-        /// <summary>
-        /// Handles the processing of a trigger, calculating if it is valid and which target state we should go to.
-        /// </summary>
-        /// <param name="trigger"></param>
-        private void DoTrigger(TTrigger trigger)
-        {
-            var triggerHandled = false;
-
-            // Make a copy of the current states since it will be manipulated
-            var states = new List<StateConfiguration>(_currentStates);
-
-            foreach (var state in states)
-            {
-                // Find all trigger configurations with a matching trigger
-                var triggers = state.TriggerConfigurations.Where(x => x.Trigger.Equals(trigger)).ToList();
-
-                // No trigger configs found?
-                if (triggers.Count == 0)
-                {
-                    // Do we have a handler for the situation? If there is only one current state, raise an exception
-                    if (_invalidTriggerHandler == null)
-                    {
-                        if (state.PathIndex < 0)
-                            throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!",
-                                                                        trigger,
-                                                                        state.StateType.Name));
-                    }
-                    else
-                        // Let the handler decide what to do
-                        _invalidTriggerHandler(state.StateType, trigger);
-                }
-                else
-                {
-                    // Is it a single, unguarded trigger?
-                    if (triggers[0].GuardClause == null)
-                    {
-                        var previousStateType = ExitState(state, addToHistory: true);
-                        triggerHandled = true;
-                        EnterNewStates(previousStateType, triggers[0].TargetStates, triggers[0].IsJoin);
-                    }
-                    else
-                    {
-                        // First exit the current state, it may affect the evaluation of the guard clauses
-                        var previousStateType = ExitState(state, addToHistory: true);
-
-                        TriggerConfiguration matchingTrigger = null;
-                        foreach (var tr in triggers)
-                        {
-                            if (tr.GuardClause())
-                            {
-                                if (matchingTrigger != null)
-                                    throw new SolidStateException(string.Format(
-                                        "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
-                                        previousStateType.Name, trigger));
-                                matchingTrigger = tr;
-                            }
-                        }
-
-                        // Did we find a matching trigger and are not forked?
-                        if (matchingTrigger == null)
-                        {
-                            if (state.PathIndex < 0)
-                                throw new SolidStateException(string.Format(
-                                    "State {0}, trigger {1} has no guard clause that evaulate to True!",
-                                    previousStateType.Name, trigger));
-                        }
-                        else
-                        {
-                            triggerHandled = true;
-                            // Queue up the transition
-                            EnterNewStates(previousStateType, matchingTrigger.TargetStates, matchingTrigger.IsJoin);
-                        }
-                    }
-                }
-            }
-
-            // Was the trigger unhandled and there is no external handler?
-            if (!triggerHandled && (_invalidTriggerHandler == null))
-                throw new SolidStateException(
-                    string.Format("Trigger {0} is not valid for any of the current states: {1}", trigger,
-                                  string.Join(", ", _currentStates.Select(x => x.StateType.Name))));
-        }
-
         private void AddStateToHistory(StateConfiguration state)
         {
             lock (_stateHistoryLockObject)
@@ -354,6 +271,18 @@ namespace Solid.State
             return _currentStates.SelectMany(x => x.TriggerConfigurations).Select(x => x.Trigger).Distinct().ToList();
         }
 
+        // Private properties
+
+        private IEnumerable<StateConfiguration> CurrentStateConfigurations
+        {
+            get { return _currentStates; }
+        }
+
+        private Action<Type, TTrigger> InvalidTriggerHandler
+        {
+            get { return _invalidTriggerHandler; }
+        }
+
         // Protected methods
 
         /// <summary>
@@ -370,7 +299,7 @@ namespace Solid.State
 
         public SolidMachine()
         {
-            _triggerHandler = new TriggerHandler();
+            _triggerHandler = new TriggerHandler(this);
             _stateConfigurations = new Dictionary<Type, StateConfiguration>();
             _transitionQueue = new List<Action>();
             _stateHistory = new List<StateConfiguration>();
