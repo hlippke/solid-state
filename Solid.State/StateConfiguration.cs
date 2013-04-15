@@ -10,7 +10,7 @@ namespace Solid.State
         {
             // Private variables
 
-            private readonly SolidMachine<TTrigger> _owningMachine;
+            private readonly SolidMachine<TTrigger> _machine;
             private readonly Type _stateType;
             private readonly List<TriggerConfiguration> _triggerConfigurations;
             
@@ -36,10 +36,10 @@ namespace Solid.State
                 _joinCounter = _totalJoinCount;
 
                 // Should a new instance be created?
-                if ((_stateInstance == null) || (_owningMachine._stateInstantiationMode == StateInstantiationMode.PerTransition))
-                    _stateInstance = _owningMachine.InstantiateState(_stateType);
+                if ((_stateInstance == null) || (_machine.StateInstantiationMode == StateInstantiationMode.PerTransition))
+                    _stateInstance = _machine.InstantiateState(_stateType);
 
-                _stateInstance.Entering(_owningMachine.GetContext());
+                _stateInstance.Entering(_machine.GetContext());
             }
 
             /// <summary>
@@ -49,22 +49,25 @@ namespace Solid.State
             {
                 if (_stateInstance != null)
                 {
-                    _stateInstance.Exiting(_owningMachine.GetContext());
+                    _stateInstance.Exiting(_machine.GetContext());
 
                     // If we're instantiating per transition, we release the reference to the instance
-                    if (_owningMachine._stateInstantiationMode == StateInstantiationMode.PerTransition)
+                    if (_machine._stateInstantiationMode == StateInstantiationMode.PerTransition)
                         _stateInstance = null;
                 }
             }
 
             // Internal properties
 
-            internal SolidMachine<TTrigger> OwningMachine
+            /// <summary>
+            /// The machine that owns this state configuration.
+            /// </summary>
+            internal SolidMachine<TTrigger> Machine
             {
-                get { return _owningMachine; }
+                get { return _machine; }
             }
 
-            internal List<TriggerConfiguration> TriggerConfigurations
+            internal IEnumerable<TriggerConfiguration> TriggerConfigurations
             {
                 get { return _triggerConfigurations; }
             }
@@ -74,6 +77,9 @@ namespace Solid.State
                 get { return _stateType; }
             }
 
+            /// <summary>
+            /// The state instance that this belongs to this state configuration.
+            /// </summary>
             internal ISolidState StateInstance
             {
                 get { return _stateInstance; }
@@ -101,7 +107,7 @@ namespace Solid.State
 
             /// <summary>
             /// Counts down as join transitions use this state as their target. When the counter
-            /// has reached 0, the state is actually entered.
+            /// has reached 0, the state is entered.
             /// </summary>
             internal int JoinCounter
             {
@@ -111,10 +117,10 @@ namespace Solid.State
 
             // Constructor
 
-            public StateConfiguration(Type stateType, SolidMachine<TTrigger> owningMachine)
+            public StateConfiguration(Type stateType, SolidMachine<TTrigger> machine)
             {
                 _stateType = stateType;
-                _owningMachine = owningMachine;
+                _machine = machine;
                 _triggerConfigurations = new List<TriggerConfiguration>();
             }
 
@@ -122,17 +128,17 @@ namespace Solid.State
 
             public StateConfiguration IsInitialState()
             {
-                if (_owningMachine._initialStateConfigured)
+                if (_machine._initialStateConfigured)
                     throw new SolidStateException(
                         "The state machine cannot have multiple states configured as the initial state!");
 
-                _owningMachine.SetInitialState(this);
+                _machine.SetInitialState(this);
 
                 return this;
             }
 
             /// <summary>
-            /// Adds a guardless permitted transition to the state configuration.
+            /// Adds a guardless transition to the state configuration.
             /// </summary>
             /// <param name="trigger">The trigger that this state should accept.</param>
             /// <returns></returns>
@@ -158,6 +164,9 @@ namespace Solid.State
                 return newConfiguration;
             }
 
+            /// <summary>
+            /// Adds a guarded transition to this state configuration.
+            /// </summary>
             public TriggerConfiguration On(TTrigger trigger, Func<bool> guardClause)
             {
                 if (guardClause == null) throw new ArgumentNullException("guardClause");

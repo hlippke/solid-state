@@ -8,20 +8,19 @@ namespace Solid.State
     {
         // Variables
 
-        private const int DEFAULT_STATEHISTORY_TRIM_THRESHOLD = 100;
         private const int MIN_STATEHISTORY_TRIM_THRESHOLD = 10;
         private const double STATEHISTORY_TRIM_PERCENTAGE = 0.1; // Trim 10% of state history
 
         private readonly object _queueLockObject = new object();
-        private readonly object _stateHistoryLockObject = new object();
+        private readonly object _currentStatesLockObject = new object();
 
         private readonly TriggerHandler _triggerHandler;
+        private readonly StateHistoryHandler _stateHistoryHandler;
         private readonly Dictionary<Type, StateConfiguration> _stateConfigurations;
         private readonly List<Action> _transitionQueue;
-        private readonly List<StateConfiguration> _stateHistory;
+        private readonly List<StateConfiguration> _currentStates;
 
         private StateConfiguration _initialState;
-        private List<StateConfiguration> _currentStates;
         
         private bool _initialStateConfigured;
         private bool _isStarted;
@@ -35,7 +34,6 @@ namespace Solid.State
         private bool _isProcessingQueue;
         
         private StateInstantiationMode _stateInstantiationMode;
-        private int _stateHistoryTrimThreshold;
 
         // Private methods
 
@@ -61,7 +59,7 @@ namespace Solid.State
         /// <summary>
         /// Enters a new state (if there is one) and raises the OnTransitioned event.
         /// </summary>
-        private void EnterNewStates(Type previousStateType, StateConfiguration[] states, bool isJoin)
+        private void EnterNewStates(Type previousStateType, IEnumerable<StateConfiguration> states, bool isJoin)
         {
             foreach (var state in states)
             {
@@ -82,11 +80,10 @@ namespace Solid.State
                 if (isOkToEnterNow)
                 {
                     if (state != null)
+                    {
                         _currentStates.Add(state);
-
-                    // Are we entering a new state?
-                    if (state != null)
                         state.Enter();
+                    }
 
                     // Raise an event about the transition (where TargetState can be null)
                     OnTransitioned(new TransitionedEventArgs(previousStateType,
@@ -108,30 +105,16 @@ namespace Solid.State
                 state.Exit();
 
                 // Record it in the history (but only if we're not running in parallel)
-                if (addToHistory && (_currentStates.Count == 1))
-                    AddStateToHistory(state);
+                lock (_currentStatesLockObject)
+                {
+                    if (addToHistory && (_currentStates.Count == 1))
+                        _stateHistoryHandler.Add(state);
 
-                // Remove from current states
-                _currentStates.Remove(state);
+                    // Remove from current states
+                    _currentStates.Remove(state);
+                }
 
                 return state.StateType;
-            }
-        }
-
-        private void AddStateToHistory(StateConfiguration state)
-        {
-            lock (_stateHistoryLockObject)
-            {
-                if (state != null)
-                    _stateHistory.Insert(0, state);
-
-                // Time to trim it?
-                if (_stateHistory.Count > _stateHistoryTrimThreshold)
-                {
-                    var trimValue = (int)(_stateHistoryTrimThreshold * (1.0 - STATEHISTORY_TRIM_PERCENTAGE));
-                    while (_stateHistory.Count > trimValue)
-                        _stateHistory.RemoveAt(trimValue);
-                }
             }
         }
 
@@ -300,12 +283,10 @@ namespace Solid.State
         public SolidMachine()
         {
             _triggerHandler = new TriggerHandler(this);
+            _stateHistoryHandler = new StateHistoryHandler(this);
             _stateConfigurations = new Dictionary<Type, StateConfiguration>();
             _transitionQueue = new List<Action>();
-            _stateHistory = new List<StateConfiguration>();
             _currentStates = new List<StateConfiguration>();
-
-            _stateHistoryTrimThreshold = DEFAULT_STATEHISTORY_TRIM_THRESHOLD;
         }
 
         public SolidMachine(object context) : this()
@@ -421,26 +402,7 @@ namespace Solid.State
         /// </summary>
         public void GoBack()
         {
-            if (_currentStates.Count > 1)
-                throw new SolidStateException("Cannot go back when running parallel states!");
-
-            StateConfiguration targetState;
-            Type previousStateType;
-
-            lock (_stateHistoryLockObject)
-            {
-                // If the history is empty, we just ignore the call
-                if (_stateHistory.Count == 0)
-                    return;
-
-                previousStateType = ExitState(_currentStates[0], addToHistory: false);
-
-                targetState = _stateHistory[0];
-                _stateHistory.RemoveAt(0);
-            }
-
-            if (targetState != null)
-                EnterNewStates(previousStateType, new[] {targetState}, isJoin: false);
+            _stateHistoryHandler.GoBack();
         }
 
         // Properties
@@ -521,11 +483,7 @@ namespace Solid.State
         /// </summary>
         public Type[] StateHistory
         {
-            get
-            {
-                lock (_stateHistoryLockObject)
-                    return _stateHistory.Select(x => x.StateType).ToArray();
-            }
+            get { return _stateHistoryHandler.GetStateTypes(); }
         }
 
         /// <summary>
@@ -534,18 +492,8 @@ namespace Solid.State
         /// </summary>
         public int StateHistoryTrimThreshold
         {
-            get { return _stateHistoryTrimThreshold; }
-            set
-            {
-                // Can't set a too low value
-                if (value < MIN_STATEHISTORY_TRIM_THRESHOLD)
-                    value = MIN_STATEHISTORY_TRIM_THRESHOLD;
-
-                _stateHistoryTrimThreshold = value;
-                
-                // If the new value is lower we may need a trim right away
-                AddStateToHistory(null);
-            }
+            get { return _stateHistoryHandler.TrimThreshold; }
+            set { _stateHistoryHandler.TrimThreshold = value; }
         }
     }
 
