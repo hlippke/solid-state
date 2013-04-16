@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Solid.State.Tests.TestStates;
 
@@ -7,46 +8,6 @@ namespace Solid.State.Tests.Parallel
     [TestClass]
     public class ParallelTests
     {
-        // Private methods
-
-        private ParallelMachine CreateParallelMachine()
-        {
-            var sm = new ParallelMachine();
-
-            sm.State<ParaState1>()
-                .On(ParallelTrigger.State1Ended).GoesTo<ParaState2>();
-
-            sm.State<ParaState2>()
-                .On(ParallelTrigger.State2Ended).ForksTo<ParaState3_1, ParaState3_2>()
-                .On(ParallelTrigger.State2EndedDetour).GoesTo<ParaState3_3>();
-
-            sm.State<ParaState3_1>()
-                .On(ParallelTrigger.State3_1Ended).GoesTo<ParaState4_1>();
-
-            sm.State<ParaState3_2>()
-                .On(ParallelTrigger.State3_2Ended).GoesTo<ParaState4_2>();
-
-            sm.State<ParaState3_3>()
-                .On(ParallelTrigger.State3_3Ended).GoesTo<ParaState6>();
-
-            sm.State<ParaState4_1>()
-                .On(ParallelTrigger.State4_1Ended).GoesTo<ParaState5_1>();
-
-            sm.State<ParaState4_2>()
-                .On(ParallelTrigger.State4_2Ended).ForksTo<ParaState5_2_1, ParaState5_2_2>();
-
-            sm.State<ParaState5_1>()
-                .On(ParallelTrigger.State5_1Ended).JoinsTo<ParaState6>();
-
-            sm.State<ParaState5_2_1>()
-                .On(ParallelTrigger.State5_2_1Ended).JoinsTo<ParaState6>();
-
-            sm.State<ParaState5_2_2>()
-                .On(ParallelTrigger.State5_2_2Ended).JoinsTo<ParaState6>();
-
-            return sm;
-        }
-
         // Test methods
 
         [TestMethod]
@@ -149,6 +110,27 @@ namespace Solid.State.Tests.Parallel
                 Console.WriteLine(ex.Message);
                 Assert.IsTrue(ex is SolidStateException, string.Format("Unexpected exception: {0}", ex));
             }
+        }
+
+        [TestMethod]
+        public void FullParallelState()
+        {
+            var machine = new ParallelMachine();
+
+            machine.Start();
+
+            // Wait for it to reach final state (with a timeout)
+            var tick = Environment.TickCount;
+            while (!machine.IsInState<ParaState6>() && (Environment.TickCount < (tick + 1500))) ;
+
+            // According to the timing of all the states, the following states should be on the same log position always:
+            Assert.IsTrue(machine.Log.Count >= 7, "Not enough log entries, timeout?");
+            Assert.IsTrue(machine.Log[4].Contains(typeof (ParaState4_2).Name),
+                          string.Format("State {0} not in expected position", typeof (ParaState4_2).Name));
+            Assert.IsTrue(machine.Log[5].Contains(typeof(ParaState4_1).Name),
+                          string.Format("State {0} not in expected position", typeof(ParaState4_1).Name));
+            Assert.IsTrue(machine.Log[6].Contains(typeof(ParaState5_1).Name),
+                          string.Format("State {0} not in expected position", typeof(ParaState5_1).Name));
         }
     }
 }

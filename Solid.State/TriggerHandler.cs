@@ -27,7 +27,11 @@ namespace Solid.State
             public void Handle(TTrigger trigger)
             {
                 var triggerHandled = false;
-                var states = new List<StateConfiguration>(_machine.CurrentStateConfigurations);
+
+                List<StateConfiguration> states;
+                lock (_machine._queueLockObject)
+                    states = new List<StateConfiguration>(_machine.CurrentStateConfigurations);
+                
                 foreach (var state in states)
                 {
                     // Find all trigger configurations with a matching trigger
@@ -98,7 +102,7 @@ namespace Solid.State
                 if (!triggerHandled && (_machine.InvalidTriggerHandler == null))
                     throw new SolidStateException(
                         string.Format("Trigger {0} is not valid for any of the current states: {1}", trigger,
-                                      string.Join(", ", _machine.CurrentStateConfigurations.Select(x => x.StateType.Name))));
+                                      string.Join(", ", states.Select(x => x.StateType.Name))));
             }
         }
     }

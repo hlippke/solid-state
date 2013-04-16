@@ -64,11 +64,12 @@ namespace Solid.State
             foreach (var state in states)
             {
                 // If this state is already the current state, there is a configuration error in the state machine
-                if (_currentStates.Contains(state))
-                    throw new SolidStateException(
-                        string.Format(
-                            "There are multiple parallel paths to state {0}, please check your state machine configuration!",
-                            state.StateType.Name));
+                lock (_currentStatesLockObject)
+                    if (_currentStates.Contains(state))
+                        throw new SolidStateException(
+                            string.Format(
+                                "There are multiple parallel paths to state {0}, please check your state machine configuration!",
+                                state.StateType.Name));
 
                 var isOkToEnterNow = true;
                 if (isJoin)
@@ -81,7 +82,8 @@ namespace Solid.State
                 {
                     if (state != null)
                     {
-                        _currentStates.Add(state);
+                        lock (_currentStatesLockObject)
+                            _currentStates.Add(state);
                         state.Enter();
                     }
 
@@ -247,11 +249,14 @@ namespace Solid.State
         /// <returns></returns>
         private List<TTrigger> GetValidTriggers()
         {
-            if (!_isStarted || (_currentStates == null))
-                return new List<TTrigger>();
-
-            // Return a distinct list (no duplicates) of triggers for all current states
-            return _currentStates.SelectMany(x => x.TriggerConfigurations).Select(x => x.Trigger).Distinct().ToList();
+            lock (_currentStatesLockObject)
+            {
+                if (!_isStarted || (_currentStates == null))
+                    return new List<TTrigger>();
+                // Return a distinct list (no duplicates) of triggers for all current states
+                return
+                    _currentStates.SelectMany(x => x.TriggerConfigurations).Select(x => x.Trigger).Distinct().ToList();
+            }
         }
 
         // Private properties
@@ -420,7 +425,11 @@ namespace Solid.State
         /// </summary>
         public ISolidState[] CurrentStates
         {
-            get { return _currentStates.Select(x => x.StateInstance).ToArray(); }
+            get
+            {
+                lock (_currentStatesLockObject)
+                    return _currentStates.Select(x => x.StateInstance).ToArray();
+            }
         }
 
         /// <summary>
@@ -430,7 +439,12 @@ namespace Solid.State
         /// <returns></returns>
         public bool IsInState<TState>() where TState : ISolidState
         {
-            return _currentStates.Any(x => x.StateInstance.GetType() == typeof (TState));
+            bool result;
+            lock (_currentStatesLockObject)
+                result =
+                    _currentStates.Any(x => (x.StateInstance != null) && (x.StateInstance.GetType() == typeof (TState)));
+
+            return result;
         }
 
         /// <summary>
