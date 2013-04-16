@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Solid.State.Tests.Parallel;
 
 namespace Solid.State.Tests.TestStates
@@ -25,6 +26,10 @@ namespace Solid.State.Tests.TestStates
 
         public void Entering(object context)
         {
+            var machine = context as ParallelMachine;
+            if (machine != null)
+                machine.Log.Add(string.Format("Entering {0}", this.GetType().Name));
+
             _timer = new Timer((callbackState) =>
                 {
                     (context as SolidMachine<ParallelTrigger>).Trigger(GetExitTrigger());
@@ -171,6 +176,7 @@ namespace Solid.State.Tests.TestStates
     {
         public void Entering(object context)
         {
+            var machine = context as ParallelMachine;
         }
 
         public void Exiting(object context)
