@@ -8,4 +8,4 @@ It also shows how the `GoBack()` method can be used to step back in the wizard w
 
 The pages of the wizard uses a common `WizardContext` instance to gather information, and this information is also used in some guard clauses in the state machine configuration to determine the flow of control.
 
-This sample application also shows how dedicated and non-dedicated state classes can be mixed: The `ShutdownApplicationState` is a dedicated state class that exits the wizard after it has been finished or cancel.
+This sample application also shows how dedicated and non-dedicated state classes can be mixed: The `ShutdownApplicationState` is a dedicated state class that exits the wizard after it has been finished or cancelled.
