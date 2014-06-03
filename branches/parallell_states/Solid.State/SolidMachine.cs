@@ -43,17 +43,17 @@ namespace Solid.State
         private void ThrowOnNotStarted()
         {
             if (!_isStarted)
-                throw new SolidStateException("State machine is not started!");
+                throw new SolidStateException(Constants.ExcMachineNotStartedId, Constants.ExcMachineNotStartedMessage);
         }
 
         /// <summary>
         /// Throws an exception with a specified message if the state machine is started.
         /// </summary>
         /// <param name="message"></param>
-        private void ThrowOnStarted(string message)
+        private void ThrowOnStarted(int id, string message)
         {
             if (_isStarted)
-                throw new SolidStateException(message);
+                throw new SolidStateException(id, message);
         }
 
         /// <summary>
@@ -67,9 +67,8 @@ namespace Solid.State
                 lock (_currentStatesLockObject)
                     if (_currentStates.Contains(state))
                         throw new SolidStateException(
-                            string.Format(
-                                "There are multiple parallel paths to state {0}, please check your state machine configuration!",
-                                state.StateType.Name));
+                            Constants.ExcMultipleParallelPathsToStateId,
+                            string.Format(Constants.ExcMultipleParallelPathsToStateMessage, state.StateType.Name));
 
                 var isOkToEnterNow = true;
                 if (isJoin)
@@ -172,10 +171,11 @@ namespace Solid.State
                 if (configuration.PathIndex < 0)
                     configuration.PathIndex = sourceState == null ? 0 : sourceState.PathIndex;
 
+                // Make sure that we're not trying to create a transition between states on different paths
                 if ((sourceState != null) && (sourceState.PathIndex != configuration.PathIndex))
                     throw new SolidStateException(
-                        string.Format(
-                            "Cannot create a transition from state {0} to state {1}, they're on different paths!",
+                        Constants.ExcTransitionsBetweenStatePathsId,
+                        string.Format(Constants.ExcTransitionsBetweenStatePathsMessage,
                             sourceState.StateType.Name, targetStateType.Name));
             }
             else
@@ -215,9 +215,13 @@ namespace Solid.State
             if (_stateResolver != null)
             {
                 var instance = _stateResolver.ResolveState(stateType);
+
+                // Did we get null in return?
                 if (instance == null)
-                    throw new SolidStateException(string.Format("State resolver returned null for type '{0}'!",
-                                                                stateType.Name));
+                    throw new SolidStateException(
+                        Constants.ExcStateResolverReturnedNullId,
+                        string.Format(Constants.ExcStateResolverReturnedNullMessage, stateType.Name));
+
                 return instance;
             }
             else
@@ -332,12 +336,13 @@ namespace Solid.State
         public void Start()
         {
             if (_initialState == null)
-                throw new SolidStateException("No states have been configured!");
+                throw new SolidStateException(Constants.ExcNoStatesConfiguredId,
+                                              Constants.ExcMachineNotStartedMessage);
 
             // If there are states that has no parameterless constructor, we must have set the StateResolver property.
             if (_stateResolverRequired && (_stateResolver == null))
-                throw new SolidStateException(
-                    "One or more configured states has no parameterless constructor. Add such constructors or make sure that the StateResolver property is set!");
+                throw new SolidStateException(Constants.ExcStatesHaveNoParameterlessConstructorId,
+                                              Constants.ExcStatesHaveNoParameterlessConstructorMessage);
 
             _isStarted = true;
 
@@ -420,6 +425,23 @@ namespace Solid.State
             get { return _initialState.StateType; }
         }
 
+        public ISolidState CurrentState
+        {
+            get
+            {
+                lock (_currentStatesLockObject)
+                {
+                    if (_currentStates.Count == 0)
+                        return null;
+                    if (_currentStates.Count > 1)
+                        throw new SolidStateException(Constants.ExcCurrentStateWhenParallelId,
+                                                      Constants.ExcCurrentStateWhenParallelMessage);
+
+                    return _currentStates[0].StateInstance;
+                }
+            }
+        }
+
         /// <summary>
         /// Returns an array of the states the machine is currently in.
         /// </summary>
@@ -485,8 +507,10 @@ namespace Solid.State
             get { return _stateInstantiationMode; }
             set
             {
-                // This is only OK to change 
-                ThrowOnStarted("The StateInstantiationMode must be set before the state machine is started!");
+                // This is only OK to change when the machine hasn't been started yet
+                ThrowOnStarted(
+                    Constants.ExcStateInstantiationModeMustBeSetBeforeStartedId,
+                    Constants.ExcStateInstantiationModeMustBeSetBeforeStartedMessage);
                 _stateInstantiationMode = value;
             }
         }

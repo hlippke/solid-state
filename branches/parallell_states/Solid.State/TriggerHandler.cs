@@ -44,9 +44,9 @@ namespace Solid.State
                         if (_machine.InvalidTriggerHandler == null)
                         {
                             if (state.PathIndex < 0)
-                                throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!",
-                                                                            trigger,
-                                                                            state.StateType.Name));
+                                throw new SolidStateException(
+                                    Constants.ExcInvalidTriggerId,
+                                    string.Format(Constants.ExcInvalidTriggerMessage, trigger, state.StateType.Name));
                         }
                         else
                             // Let the handler decide what to do
@@ -73,20 +73,20 @@ namespace Solid.State
                                 if (tr.GuardClause())
                                 {
                                     if (matchingTrigger != null)
-                                        throw new SolidStateException(string.Format(
-                                            "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
-                                            previousStateType.Name, trigger));
+                                        throw new SolidStateException(
+                                            Constants.ExcMultipleGuardsAreTrueId,
+                                            string.Format(Constants.ExcMultipleGuardsAreTrueMessage, previousStateType.Name, trigger));
                                     matchingTrigger = tr;
                                 }
                             }
 
-                            // Did we find a matching trigger and are not forked?
+                            // Did we find a matching trigger?
                             if (matchingTrigger == null)
                             {
                                 if (state.PathIndex < 0)
-                                    throw new SolidStateException(string.Format(
-                                        "State {0}, trigger {1} has no guard clause that evaulate to True!",
-                                        previousStateType.Name, trigger));
+                                    throw new SolidStateException(
+                                        Constants.ExcNoGuardsAreTrueId,
+                                        string.Format(Constants.ExcNoGuardsAreTrueMessage, previousStateType.Name, trigger));
                             }
                             else
                             {
@@ -101,8 +101,9 @@ namespace Solid.State
                 // Was the trigger unhandled and there is no external handler?
                 if (!triggerHandled && (_machine.InvalidTriggerHandler == null))
                     throw new SolidStateException(
-                        string.Format("Trigger {0} is not valid for any of the current states: {1}", trigger,
-                                      string.Join(", ", states.Select(x => x.StateType.Name))));
+                        Constants.ExcInvalidTriggerForMultipleStatesId,
+                        string.Format(Constants.ExcInvalidTriggerForMultipleStatesMessage, trigger,
+                        string.Join(", ", states.Select(x => x.StateType.Name))));
             }
         }
     }
