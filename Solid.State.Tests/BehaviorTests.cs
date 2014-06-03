@@ -303,7 +303,7 @@ namespace Solid.State.Tests
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
             // The CurrentState should have been freshly created, meaning that CountingState.EnteringSelfCount should be 1
-            Assert.IsTrue(sm.IsInState<CountingState>() && ((sm.CurrentStates[0] as CountingState).EnteringSelfCount == 2),
+            Assert.IsTrue((sm.CurrentState is CountingState) && ((sm.CurrentState as CountingState).EnteringSelfCount == 2),
                 string.Format("Unexpected EnteringSelfCount!"));
 
         }
@@ -333,8 +333,7 @@ namespace Solid.State.Tests
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
             // The CurrentState should have been freshly created, meaning that CountingState.EnteringSelfCount should be 1
-            Assert.IsTrue(
-                sm.IsInState<CountingState>() && ((sm.CurrentStates[0] as CountingState).EnteringSelfCount == 1),
+            Assert.IsTrue((sm.CurrentState is CountingState) && ((sm.CurrentState as CountingState).EnteringSelfCount == 1),
                 string.Format("Unexpected EnteringSelfCount!"));
 
         }
@@ -457,7 +456,6 @@ namespace Solid.State.Tests
             // The state history should be 45-50 items
             Assert.IsTrue((sm.StateHistory.Length >= 45) && (sm.StateHistory.Length <= 50),
                           string.Format("{0} states in history", sm.StateHistory.Length));
-
         }
     }
 }

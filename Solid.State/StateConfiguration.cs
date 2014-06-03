@@ -126,11 +126,15 @@ namespace Solid.State
 
             // Methods
 
+            /// <summary>
+            /// Sets this state as the initial state of the state machine.
+            /// </summary>
+            /// <returns></returns>
             public StateConfiguration IsInitialState()
             {
                 if (_machine._initialStateConfigured)
-                    throw new SolidStateException(
-                        "The state machine cannot have multiple states configured as the initial state!");
+                    throw new SolidStateException(Constants.ExcMultipleInitialStatesId,
+                                                  Constants.ExcMultipleInitialStatesMessage);
 
                 _machine.SetInitialState(this);
 
@@ -150,12 +154,12 @@ namespace Solid.State
                     // Does the existing configuration have a guard clause?
                     if (existingConfig.GuardClause != null)
                         throw new SolidStateException(
-                            string.Format(
-                                "State {0} has at least one guarded transition configured on trigger {1} already. A state cannot have both guardless and guarded transitions at the same time!",
-                                _stateType.Name, trigger));
+                            Constants.ExcStateHasGuardedTransitionAlreadyId,
+                            string.Format(Constants.ExcStateHasGuardedTransitionAlreadyMessage,_stateType.Name, trigger));
                     else
-                        throw new SolidStateException(string.Format(
-                            "Trigger {0} has already been configured for state {1}!", trigger, _stateType.Name));
+                        throw new SolidStateException(
+                            Constants.ExcTriggerAlreadyConfiguredForStateId,
+                            string.Format(Constants.ExcTriggerAlreadyConfiguredForStateMessage, trigger, _stateType.Name));
                 }
 
                 var newConfiguration = new TriggerConfiguration(trigger, null, this);
@@ -177,9 +181,8 @@ namespace Solid.State
                     // It's OK that there are multiple configurations of the same trigger, as long as they all have guard clauses
                     if (existingConfig.GuardClause == null)
                         throw new SolidStateException(
-                            string.Format(
-                                "State {0} has an unguarded transition for trigger {1}, you cannot add guarded transitions to this state as well!",
-                                _stateType.Name, trigger));
+                            Constants.ExcStateHasUnguardedTransitionAlreadyId,
+                            string.Format(Constants.ExcStateHasUnguardedTransitionAlreadyMessage, _stateType.Name, trigger));
                 }
 
                 var newConfiguration = new TriggerConfiguration(trigger, guardClause, this);

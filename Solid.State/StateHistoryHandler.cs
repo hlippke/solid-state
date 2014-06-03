@@ -65,7 +65,8 @@ namespace Solid.State
                 var states = _machine.CurrentStateConfigurations.ToList();
 
                 if (states.Count > 1)
-                    throw new SolidStateException("Cannot go back when executing parallel states!");
+                    throw new SolidStateException(Constants.ExcCannotGoBackWhenParallelId,
+                                                  Constants.ExcCannotGoBackWhenParallelMessage);
 
                 StateConfiguration targetState;
                 Type previousStateType;

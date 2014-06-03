@@ -113,6 +113,29 @@ namespace Solid.State.Tests.Parallel
         }
 
         [TestMethod]
+        public void CurrentStateUnavailableWhenParallelStates()
+        {
+            try
+            {
+                var sm = new ParallelMachine();
+                sm.Start();
+
+                sm.Trigger(ParallelTrigger.State1Ended);
+                sm.Trigger(ParallelTrigger.State2Ended);
+
+                Console.WriteLine("CurrentState : {0}", sm.CurrentState);
+
+                Assert.Fail("Could use CurrentState property despite of parallel states!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Assert.IsTrue(ex is SolidStateException, string.Format("Unexpected exception: {0}", ex));
+            }
+            
+        }
+
+        [TestMethod]
         public void FullParallelState()
         {
             var machine = new ParallelMachine();
