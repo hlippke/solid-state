@@ -24,6 +24,7 @@ namespace Solid.State
         
         private bool _initialStateConfigured;
         private bool _isStarted;
+        private bool _hasParallelStates;
 
         private object _context;
         private IStateResolver _stateResolver;
@@ -273,6 +274,12 @@ namespace Solid.State
         private Action<Type, TTrigger> InvalidTriggerHandler
         {
             get { return _invalidTriggerHandler; }
+        }
+
+        private bool HasParallelStates
+        {
+            get { return _hasParallelStates; }
+            set { _hasParallelStates = value; }
         }
 
         // Protected methods
