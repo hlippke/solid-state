@@ -61,6 +61,9 @@ namespace Solid.State
             public StateConfiguration ForksTo<TTargetState1, TTargetState2>() where TTargetState1 : ISolidState
                 where TTargetState2 : ISolidState
             {
+                // Indicate that the state machine contains parallel states
+                _owningStateConfiguration.Machine.HasParallelStates = true;
+
                 _targetStates = new[]
                     {
                         _owningStateConfiguration.Machine.LinkToState(_owningStateConfiguration, typeof(TTargetState1), _owningStateConfiguration.PathIndex),
@@ -76,6 +79,9 @@ namespace Solid.State
             public StateConfiguration ForksTo<TTargetState1, TTargetState2, TTargetState3>()
                 where TTargetState1 : ISolidState where TTargetState2 : ISolidState where TTargetState3 : ISolidState
             {
+                // Indicate that the state machine contains parallel states
+                _owningStateConfiguration.Machine.HasParallelStates = true;
+
                 _targetStates = new[]
                     {
                         _owningStateConfiguration.Machine.LinkToState(_owningStateConfiguration, typeof(TTargetState1), _owningStateConfiguration.PathIndex),

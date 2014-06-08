@@ -8,8 +8,19 @@ namespace Solid.State.Tests.Parallel
     [TestClass]
     public class ParallelTests
     {
+        // Private methods
+
+        private void AssertException(Exception ex, int errorId)
+        {
+            Assert.IsTrue((ex is SolidStateException) && ((ex as SolidStateException).Id == errorId),
+                          string.Format("Unexpected exception: {0}", ex));
+        }
+
         // Test methods
 
+        /// <summary>
+        /// Tests that the state machine can be forked to two states.
+        /// </summary>
         [TestMethod]
         public void TwoCurrentStates()
         {
@@ -23,6 +34,10 @@ namespace Solid.State.Tests.Parallel
             Assert.IsTrue(sm.CurrentStates.Length == 2, "CurrentStates.Length != 2");
         }
 
+        /// <summary>
+        /// Tests that a state that is a join target isn't entered until all states
+        /// joining to it has exited.
+        /// </summary>
         [TestMethod]
         public void WaitForAllJoins()
         {
@@ -76,7 +91,7 @@ namespace Solid.State.Tests.Parallel
             }
             catch (Exception ex)
             {
-                Assert.IsTrue(ex is SolidStateException, string.Format("Unexpected exception: {0}", ex));
+                AssertException(ex, Constants.ExcInvalidTriggerForMultipleStatesId);
             }
         }
 
@@ -88,7 +103,7 @@ namespace Solid.State.Tests.Parallel
         {
             try
             {
-                var sm = new ParallelMachine();
+                var sm = new SolidMachine<ParallelTrigger>();
 
                 sm.State<ParaState1>()
                     .On(ParallelTrigger.State1Ended).GoesTo<ParaState2>();
@@ -107,11 +122,14 @@ namespace Solid.State.Tests.Parallel
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                Assert.IsTrue(ex is SolidStateException, string.Format("Unexpected exception: {0}", ex));
+                AssertException(ex, Constants.ExcTransitionsBetweenStatePathsId);
             }
         }
 
+        /// <summary>
+        /// Tests that the CurrentState property cannot be used when the state machine contains
+        /// parallel states.
+        /// </summary>
         [TestMethod]
         public void CurrentStateUnavailableWhenParallelStates()
         {
@@ -129,12 +147,15 @@ namespace Solid.State.Tests.Parallel
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                Assert.IsTrue(ex is SolidStateException, string.Format("Unexpected exception: {0}", ex));
+                AssertException(ex, Constants.ExcCurrentStateWhenParallelId);
             }
             
         }
 
+        /// <summary>
+        /// Runs through a state machine where each state has a predetermined execution time
+        /// and the assert checks that the states ended up in the correct order during execution.
+        /// </summary>
         [TestMethod]
         public void FullParallelState()
         {
