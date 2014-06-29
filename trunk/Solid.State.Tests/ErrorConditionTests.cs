@@ -32,6 +32,7 @@ namespace Solid.State.Tests
             {
                 Console.WriteLine(ex.Message);
                 Assert.IsTrue(ex is SolidStateException);
+                Assert.IsTrue((ex as SolidStateException).ErrorId == SolidStateConstants.ErrorTriggerAlreadyConfiguredForState);
             }
         }
 
@@ -56,6 +57,8 @@ namespace Solid.State.Tests
             {
                 Console.WriteLine(ex.Message);
                 Assert.IsTrue(ex is SolidStateException);
+                Assert.IsTrue((ex as SolidStateException).ErrorId ==
+                              SolidStateConstants.ErrorCannotMixGuardedAndGuardlessTransitions);
             }
         }
 
@@ -85,6 +88,7 @@ namespace Solid.State.Tests
             {
                 Console.WriteLine(ex.Message);
                 Assert.IsTrue(ex is SolidStateException);
+                Assert.IsTrue((ex as SolidStateException).ErrorId == SolidStateConstants.ErrorMultipleGuardClausesAreTrue);
             }
         }
 
@@ -114,6 +118,7 @@ namespace Solid.State.Tests
             {
                 Console.WriteLine(ex.Message);
                 Assert.IsTrue(ex is SolidStateException);
+                Assert.IsTrue((ex as SolidStateException).ErrorId == SolidStateConstants.ErrorMultipleInitialStates);
             }
         }
 
@@ -137,6 +142,8 @@ namespace Solid.State.Tests
             {
                 Console.WriteLine(ex.Message);
                 Assert.IsTrue(ex is SolidStateException);
+                Assert.IsTrue((ex as SolidStateException).ErrorId ==
+                              SolidStateConstants.ErrorStatesNeedParameterlessConstructor);
             }
         }
 
@@ -157,6 +164,7 @@ namespace Solid.State.Tests
             {
                 Console.WriteLine(ex.Message);
                 Assert.IsTrue(ex is SolidStateException);
+                Assert.IsTrue((ex as SolidStateException).ErrorId == SolidStateConstants.ErrorNoStatesHaveBeenConfigured);
             }
         }
 
@@ -183,6 +191,7 @@ namespace Solid.State.Tests
             {
                 Console.WriteLine(ex.Message);
                 Assert.IsTrue(ex is SolidStateException);
+                Assert.IsTrue((ex as SolidStateException).ErrorId == SolidStateConstants.ErrorStateMachineNotStarted);
             }
         }
 
@@ -207,6 +216,7 @@ namespace Solid.State.Tests
             {
                 Console.WriteLine(ex.Message);
                 Assert.IsTrue(ex is SolidStateException);
+                Assert.IsTrue((ex as SolidStateException).ErrorId == SolidStateConstants.ErrorTriggerNotValidForState);
             }
         }
     }

@@ -458,7 +458,6 @@ namespace Solid.State.Tests
             // The state history should be 45-50 items
             Assert.IsTrue((sm.StateHistory.Length >= 45) && (sm.StateHistory.Length <= 50),
                           string.Format("{0} states in history", sm.StateHistory.Length));
-
         }
     }
 }
