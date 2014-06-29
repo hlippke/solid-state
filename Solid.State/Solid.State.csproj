@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SolidStateConstants.cs" />
     <Compile Include="Events.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="ISolidState.cs" />

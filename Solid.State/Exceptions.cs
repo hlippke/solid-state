@@ -7,16 +7,23 @@ namespace Solid.State
     /// </summary>
     public class SolidStateException : Exception
     {
-        public SolidStateException()
+        // Constructors
+
+        public SolidStateException(int errorId, string message) : base(message)
         {
+            ErrorId = errorId;
         }
 
-        public SolidStateException(string message) : base(message)
+        public SolidStateException(int errorId, string message, Exception innerException) : base(message, innerException)
         {
+            ErrorId = errorId;
         }
 
-        public SolidStateException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
+        // Properties
+
+        /// <summary>
+        /// Gets the id associated with error that caused the exception.
+        /// </summary>
+        public int ErrorId { get; private set; }
     }
 }

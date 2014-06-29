@@ -8,8 +8,9 @@ namespace Solid.State
     {
         // Variables
 
-        private const int DEFAULT_STATEHISTORY_TRIM_THRESHOLD = 100;
-        private const int MIN_STATEHISTORY_TRIM_THRESHOLD = 10;
+        private const int DefaultStatehistoryTrimThreshold = 100;
+        private const int MinStatehistoryTrimThreshold = 10;
+        private const double StatehistoryTrimPercentage = 0.1; // Trim 10% of state history
 
         private readonly object _queueLockObject = new object();
         private readonly object _stateHistoryLockObject = new object();
@@ -34,7 +35,6 @@ namespace Solid.State
         
         private StateInstantiationMode _stateInstantiationMode;
         private int _stateHistoryTrimThreshold;
-        private const double STATEHISTORY_TRIM_PERCENTAGE = 0.1; // Trim 10% of state history
 
         // Private methods
 
@@ -44,17 +44,7 @@ namespace Solid.State
         private void ThrowOnNotStarted()
         {
             if (!_isStarted)
-                throw new SolidStateException("State machine is not started!");
-        }
-
-        /// <summary>
-        /// Throws an exception with a specified message if the state machine is started.
-        /// </summary>
-        /// <param name="message"></param>
-        private void ThrowOnStarted(string message)
-        {
-            if (_isStarted)
-                throw new SolidStateException(message);
+                throw new SolidStateException(SolidStateConstants.ErrorStateMachineNotStarted, "State machine is not started!");
         }
 
         /// <summary>
@@ -113,8 +103,8 @@ namespace Solid.State
             {
                 // Do we have a handler for the situation?
                 if (_invalidTriggerHandler == null)
-                    throw new SolidStateException(string.Format("Trigger {0} is not valid for state {1}!", trigger,
-                                                            _currentState.StateType.Name));
+                    throw new SolidStateException(SolidStateConstants.ErrorTriggerNotValidForState,
+                        string.Format("Trigger {0} is not valid for state {1}!", trigger, _currentState.StateType.Name));
                 // Let the handler decide what to do
                 _invalidTriggerHandler(_currentState.StateType, trigger);
             }
@@ -137,8 +127,8 @@ namespace Solid.State
                         if (tr.GuardClause())
                         {
                             if (matchingTrigger != null)
-                                throw new SolidStateException(string.Format(
-                                    "State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
+                                throw new SolidStateException(SolidStateConstants.ErrorMultipleGuardClausesAreTrue,
+                                    string.Format("State {0}, trigger {1} has multiple guard clauses that simultaneously evaulate to True!",
                                     previousStateType.Name, trigger));
                             matchingTrigger = tr;
                         }
@@ -146,8 +136,8 @@ namespace Solid.State
 
                     // Did we find a matching trigger?
                     if (matchingTrigger == null)
-                        throw new SolidStateException(string.Format(
-                            "State {0}, trigger {1} has no guard clause that evaulate to True!",
+                        throw new SolidStateException(SolidStateConstants.ErrorNoGuardClauseIsTrue,
+                            string.Format("State {0}, trigger {1} has no guard clause that evaulate to True!",
                             previousStateType.Name, trigger));
 
                     // Queue up the transition
@@ -166,7 +156,7 @@ namespace Solid.State
                 // Time to trim it?
                 if (_stateHistory.Count > _stateHistoryTrimThreshold)
                 {
-                    var trimValue = (int)(_stateHistoryTrimThreshold * (1.0 - STATEHISTORY_TRIM_PERCENTAGE));
+                    var trimValue = (int)(_stateHistoryTrimThreshold * (1.0 - StatehistoryTrimPercentage));
                     while (_stateHistory.Count > trimValue)
                         _stateHistory.RemoveAt(trimValue);
                 }
@@ -223,8 +213,6 @@ namespace Solid.State
         /// Creates an instance of a specified state type, either through .NET activation
         /// or through a defined state resolver.
         /// </summary>
-        /// <param name="stateType"></param>
-        /// <returns></returns>
         private ISolidState InstantiateState(Type stateType)
         {
             // Do we have a state resolver?
@@ -232,8 +220,8 @@ namespace Solid.State
             {
                 var instance = _stateResolver.ResolveState(stateType);
                 if (instance == null)
-                    throw new SolidStateException(string.Format("State resolver returned null for type '{0}'!",
-                                                                stateType.Name));
+                    throw new SolidStateException(SolidStateConstants.ErrorStateResolverCouldNotResolveType,
+                        string.Format("State resolver could not resolve a state for type '{0}'!", stateType.Name));
                 return instance;
             }
             else
@@ -277,7 +265,6 @@ namespace Solid.State
         /// <summary>
         /// Raises the Transitioned event.
         /// </summary>
-        /// <param name="eventArgs"></param>
         protected virtual void OnTransitioned(TransitionedEventArgs eventArgs)
         {
             if (Transitioned != null)
@@ -292,7 +279,7 @@ namespace Solid.State
             _transitionQueue = new List<Action>();
             _stateHistory = new List<StateConfiguration>();
 
-            _stateHistoryTrimThreshold = DEFAULT_STATEHISTORY_TRIM_THRESHOLD;
+            _stateHistoryTrimThreshold = DefaultStatehistoryTrimThreshold;
         }
 
         public SolidMachine(object context) : this()
@@ -350,11 +337,11 @@ namespace Solid.State
         public void Start()
         {
             if (_initialState == null)
-                throw new SolidStateException("No states have been configured!");
+                throw new SolidStateException(SolidStateConstants.ErrorNoStatesHaveBeenConfigured, "No states have been configured!");
 
             // If there are states that has no parameterless constructor, we must have set the StateResolver property.
             if (_stateResolverRequired && (_stateResolver == null))
-                throw new SolidStateException(
+                throw new SolidStateException(SolidStateConstants.ErrorStatesNeedParameterlessConstructor,
                     "One or more configured states has no parameterless constructor. Add such constructors or make sure that the StateResolver property is set!");
 
             _isStarted = true;
@@ -503,7 +490,9 @@ namespace Solid.State
             set
             {
                 // This is only OK to change 
-                ThrowOnStarted("The StateInstantiationMode must be set before the state machine is started!");
+                if (_isStarted)
+                    throw new SolidStateException(SolidStateConstants.ErrorStateMachineIsStarted,
+                        "The StateInstantiationMode must be set before the state machine is started!");
                 _stateInstantiationMode = value;
             }
         }
@@ -531,8 +520,8 @@ namespace Solid.State
             set
             {
                 // Can't set a too low value
-                if (value < MIN_STATEHISTORY_TRIM_THRESHOLD)
-                    value = MIN_STATEHISTORY_TRIM_THRESHOLD;
+                if (value < MinStatehistoryTrimThreshold)
+                    value = MinStatehistoryTrimThreshold;
 
                 _stateHistoryTrimThreshold = value;
                 
