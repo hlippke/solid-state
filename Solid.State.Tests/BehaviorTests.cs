@@ -302,7 +302,7 @@ namespace Solid.State.Tests
             // Goto CountingState again
             sm.Trigger(TelephoneTrigger.PickingUpPhone);
 
-            // The CurrentState should have been freshly created, meaning that CountingState.EnteringSelfCount should be 1
+            // The same CountingState instance should have been used both times so it should've been entered 2 times
             Assert.IsTrue((sm.CurrentState is CountingState) && ((sm.CurrentState as CountingState).EnteringSelfCount == 2),
                 string.Format("Unexpected EnteringSelfCount!"));
 
