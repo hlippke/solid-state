@@ -11,7 +11,7 @@ Solid.State is heavily influenced by the stateless project, which I've used exte
 
 Solid.State has an easy-to-use, fluent configuration API. Here's an example of how the famous telephone state machine can be set up:
 
-```
+```csharp
 var sm = new SolidMachine<TelephoneTrigger>();
 
 sm.State<IdleState>()
@@ -49,7 +49,7 @@ Starting the state machine will trigger a Transitioned event where the SourceSta
 ##Setting the initial state
 
 By default, the first configured state becomes the initial state, e.g. IdleState in the code above. You can define another initial state by using the IsInitialState() method:
-```
+```csharp
 sm.State<RingingState>()
     .IsInitialState()
     .On(TelephoneTrigger.PickingUpPhone).GoesTo<ConversationState>()
@@ -61,7 +61,7 @@ Only one state can be defined as the initial state, otherwise an exception will 
 The state machine can be configured to use a context that is fed to the states in the Entering and Exiting methods. This is a convenient way to make relevant data available to the state classes without having to inject it.
 
 The context can be defined either in the constructor or by setting the Context property:
-```
+```csharp
 var sm = new SolidMachine<TelephoneTrigger>(_applicationController);
 
 var sm2 = new SolidMachine<TelephoneTrigger>();
@@ -73,14 +73,14 @@ If no context is explicitly set, the state machine will use itself as the contex
 The state machine can be configured to allow reentrant states, which means a state that transitions to/from itself. During the transition, the Exiting and Entering methods of the state will be triggered.
 
 The configuration is simply done by defining a transition that points back to the same state:
-```
+```csharp
 sm.State<SendEmailState>()
     .On(Trigger.ResendEmailRequested).GoesTo<SendEmailState>();
 ```
 ##Guard clauses
 
 You can control the flow of the state machine by configuring guard clauses in the configuration. A guard clause is basically a Func<bool> that returns either True or False.
-```
+```csharp
 var sm = new SolidMachine<TelephoneTrigger>();
 sm.State<IdleState>()
     .On(TelephoneTrigger.PickingUpPhone, () => IsPhoneWorking).GoesTo<DiallingState>()
@@ -91,11 +91,11 @@ Be sure to always only have one guard clause for a state/trigger combination tha
 ##Triggering a transition
 
 To fire a trigger on the state machine, simply call the Trigger method:
-```
+```csharp
 sm.Trigger(TelephoneTrigger.PickingUpPhone);
 ```
 The ValidTriggers property can be used to query the state machine for a list of the triggers that are valid for the current state:
-```
+```csharp
 foreach (var trigger in sm.ValidTriggers)
     Console.WriteLine("Valid trigger: " + trigger.ToString());
 ```
@@ -111,7 +111,7 @@ A state for the state machine can be any class implementing the ISolidState inte
 This means that you can choose between writing dedicated state classes or make existing classes implement the ISolidState interface. For instance, it would be possible to build a wizard where each page is a WinForms UserControl that also implements the ISolidState interface.
 
 A simple dedicated state class:
-```
+```csharp
 public class AnnoyingSoundState : ISolidState
 {
     public void Entering(object context)
@@ -132,7 +132,7 @@ When a transition is under way, the state machine needs to make sure that the ta
 Solid.State can be configured to either treat the states as singletons, or to create new target state instances on each transition.
 
 The behavior is configured through the StateInstantiationMode property. It is by default set to StateInstantiationMode.Singleton. To get a new state instance on each transition, configure the state machine before it is started:
-```
+```csharp
 var sm = new SolidMachine<TelephoneTrigger>();
 sm.StateInstantiationMode = StateInstantiationMode.PerTransition;
 ```
@@ -141,21 +141,21 @@ sm.StateInstantiationMode = StateInstantiationMode.PerTransition;
 Solid.State can be configured to use a state resolver, which is then responsible for instantiating state objects depending on the type. This plays very well with an IoC container, which makes it possible to use constructor or property injection on the state classes.
 
 The state resolver must implement the IStateResolver interface, which is very simple:
-```
+```csharp
 public interface IStateResolver
 {
     ISolidState ResolveState(Type stateType);
 }
 ```
 The state resolver can either be set in the constructor or by assigning it to the StateResolver property:
-```
+```csharp
 var stateMachine = new SolidMachine<TelephoneTrigger>(null, this);
 
 var stateMachine2 = new SolidMachine<TelephoneTrigger>();
 stateMachine2.StateResolver = _autofacResolver;
 ```
 My preference for IoC is Autofac, which could make the resolver look something like this:
-```
+```csharp
 public class MyStateResolver : IStateResolver
 {
     private readonly IComponentContext _context;
@@ -185,7 +185,7 @@ If the state machine is set to StateInstantiationMode = Singleton but the state 
 ##Listening in
 
 To keep track of what's happening inside the state machine, the Transitioned event can be used. This is called when a transition has occured, defining the source and target state of the transition:
-```
+```csharp
 var sm = new SolidMachine<TelephoneTrigger>();
 sm.Transitioned += SolidMachineOnTransitioned;
 
@@ -202,7 +202,7 @@ NOTE! When this event is raised, the Exiting method on the source state and the 
 ###The current state
 
 The CurrentState property can be used to query the current state of the state machine.
-```
+```csharp
 if (sm.CurrentState is ConversationState)
     MessageBox.Show("Stop talking, I need the phone!");
 ```
